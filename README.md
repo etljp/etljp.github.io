@@ -2,7 +2,7 @@
 
 Hey you found my place where I for once actually try to learn Japanese, from song lyrics.
 
-Currently, there's no easy way to navigate the songs available.
+[You can view available songs in this google sheet](https://docs.google.com/spreadsheets/d/1JvjjKyKPOtX0siVqJ6a3726VL8yJRVQ11lvoFviOoWk/edit?usp=sharing)
 
 ### Contributing
 
