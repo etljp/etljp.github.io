@@ -51,34 +51,38 @@ mark {
     color: #eee;
 }
 
-.yellow {
-    background-color: #8b7500;
+.red {
+    background-color: #9b0814; /* lum 33 */
 }
 
 .orange {
-    background-color: #d44100;
+    background-color: #d44100; /* lum 50 */
 }
 
-.blue {
-    background-color: #2c46b0;
-}
-
-.red {
-    background-color: #9b0814;
+.yellow {
+    background-color: #908410; /* lum 55 */
 }
 
 .green {
-    background-color: #009000;
+    background-color: #007b00; /* lum 44 */
+}
+
+.blue {
+    background-color: #2c46b0; /* lum 33 */
 }
 
 .cyan {
-    background-color: #0089a9;
+    background-color: #1c90b0; /* lum 55 */
 }
 
 .pink {
-    background-color: #be4c91;
+    background-color: #cd5a9e; /* lum 55 */
+}
+
+.violet {
+    background-color: #87168a; /* lum 33 */
 }
 
 .brown {
-    background-color: #ad6242;
+    background-color: #ad6242; /* lum 50 *//* same as orange */
 }
