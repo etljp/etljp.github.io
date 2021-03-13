@@ -26,7 +26,11 @@ h6 {
 rt {
     font-size: 66%;
     color: #eee;
-    background-color: #334;
+    padding-top: 2px;
+}
+
+i {
+    font-size: 133%;
 }
 
 .first {
