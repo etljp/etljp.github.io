@@ -54,39 +54,3 @@ i {
 mark {
     color: #eee;
 }
-
-.red {
-    background-color: #9b0814; /* lum 33 */
-}
-
-.orange {
-    background-color: #d44100; /* lum 50 */
-}
-
-.yellow {
-    background-color: #908410; /* lum 55 */
-}
-
-.green {
-    background-color: #007b00; /* lum 44 */
-}
-
-.blue {
-    background-color: #2c46b0; /* lum 33 */
-}
-
-.cyan {
-    background-color: #1c90b0; /* lum 55 */
-}
-
-.pink {
-    background-color: #cd5a9e; /* lum 55 */
-}
-
-.violet {
-    background-color: #87168a; /* lum 33 */
-}
-
-.brown {
-    background-color: #ad6242; /* lum 50 *//* same as orange */
-}
