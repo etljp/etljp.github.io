@@ -1,33 +1,4 @@
-function testCopy() {
-    let selection = window.getSelection()
-    console.log(selection)
-    for (let i = 0; i < selection.rangeCount; i++) {
-        let range = selection.getRangeAt(i)
-        console.log(range)
-        console.log(range.startContainer === range.endContainer)
-        console.log('---')
-    }
-}
-
-function markRed() {
-    let selection = window.getSelection()
-    for (let i = 0; i < selection.rangeCount; i++) {
-        let range = selection.getRangeAt(i)
-        if (range.startContainer === range.endContainer) {
-            if (range.commonAncestorContainer.nodeName === "#text") {
-                console.log(range.commonAncestorContainer)
-                let $node = $(range.commonAncestorContainer)
-                let start = $node.text().substring(0, range.startOffset)
-                let selected = $node.text().substring(range.startOffset, range.endOffset)
-                let end = $node.text().substring(range.endOffset)
-                $node.replaceWith(`${start}<mark class="red">${selected}</mark>${end}`)
-            }
-        }
-    }
-}
-
-function walkSiblings() {
-    let hadMarkTag = false
+function walkSiblings(callback = (cur) => console.log(cur)) {
     let selection = window.getSelection()
     console.log(selection)
     for (let i = 0; i < selection.rangeCount; i++) {
@@ -43,18 +14,68 @@ function walkSiblings() {
         while (currentNode.parentNode.nodeName !== "P")
             currentNode = currentNode.parentNode
 
-        console.log(currentNode)
-        while (currentNode !== endNode) { // && currentNode.firstChild !== endNode) {
-            if (currentNode.nextSibling) { // TODO: bug in firefox, https://bugzilla.mozilla.org/show_bug.cgi?id=1746926
+        callback(currentNode)
+        while (currentNode !== endNode) {
+            if (currentNode.nextSibling) {
                 currentNode = currentNode.nextSibling
-                console.log(currentNode)
+                callback(currentNode)
             } else
                 break
-            if (currentNode.nodeName === "MARK")
-                hadMarkTag = true
         }
     }
-    return hadMarkTag
+}
+
+// TODO: bug in firefox, https://bugzilla.mozilla.org/show_bug.cgi?id=1746926
+function applyMark(targetColor = 'red') {
+    let selection = window.getSelection()
+    for (let i = 0; i < selection.rangeCount; i++) {
+        let range = selection.getRangeAt(i)
+
+        let startNode = range.startContainer
+        while (startNode.parentNode.nodeName !== "P") {
+            startNode = startNode.parentNode
+            if (startNode.nodeName === "RUBY") break
+        }
+
+        let endNode = range.endContainer
+        while (endNode.parentNode.nodeName !== "P") {
+            endNode = endNode.parentNode
+            if (endNode.nodeName === "RUBY") break
+        }
+
+        let startSpan = document.createElement('span')
+        startSpan.id = 'start'
+        let endSpan = document.createElement('span')
+        endSpan.id = 'end'
+
+        if (startNode === endNode && range.commonAncestorContainer.nodeName !== "RUBY") {
+            let node = range.commonAncestorContainer
+            let start = node.textContent.substring(0, range.startOffset)
+            let selected = node.textContent.substring(range.startOffset, range.endOffset)
+            let end = node.textContent.substring(range.endOffset)
+            node.replaceWith(start, startSpan, selected, endSpan, end)
+        } else {
+            // start
+            if (startNode.nodeName === "RUBY") {
+                startNode.before(startSpan)
+            } else {
+                let node = range.startContainer
+                let start = node.textContent.substring(0, range.startOffset)
+                let selected = node.textContent.substring(range.startOffset)
+                node.replaceWith(start, startSpan, selected)
+            }
+
+            // end
+            if (endNode.nodeName === "RUBY") {
+                endNode.after(endSpan)
+            } else {
+                let node = range.endContainer
+                let selected = node.textContent.substring(0, range.endOffset)
+                let end = node.textContent.substring(range.endOffset)
+                node.replaceWith(selected, endSpan, end)
+            }
+        }
+    }
 }
 
 // you can check parentNode.nodeName === "MARK" (this is no longer true, use currentNode.nodeName === "MARK")
@@ -69,4 +90,13 @@ function walkSiblings() {
 // if inside another tag, you need to make the part that's selected in the tag MARK and then one of the tag limits MARK
 // </ruby><mark class="red> for end, </mark><ruby> for start
 // need to do this for both the start and end of selection
+
+function formatParagraph() {
+    let paragraphs = document.getElementsByTagName('p')
+    for (let p of paragraphs) {
+        p.innerHTML = p.innerHTML
+            .replaceAll(/\n\s*/g, '')
+            .replaceAll('<br>', '<br>\n')
+    }
+}
 
