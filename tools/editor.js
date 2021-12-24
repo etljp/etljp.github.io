@@ -26,6 +26,10 @@ function walkSiblings(callback = (cur) => console.log(cur)) {
 }
 
 function createSelectionSpans(range) {
+    if (!range) {
+        range = window.getSelection().getRangeAt(0)
+    }
+
     // TODO: bug in firefox, https://bugzilla.mozilla.org/show_bug.cgi?id=1746926
     // walk out of <rt>
     let startNode = range.startContainer
@@ -124,7 +128,18 @@ function markSelectionSpans(targetColor) {
     endSpan.remove()
 }
 
+function availableColors() {
+    let rv = []
+    for (let r of document.getElementById('colorSheet').sheet.cssRules) {
+        rv.push(r.selectorText.substring(1))
+    }
+    return rv
+}
+
 function applyMark(targetColor = 'red') {
+    if (!availableColors().includes(targetColor)) {
+        throw new Error(`${targetColor} is not a valid css class in colors.css`)
+    }
     let selection = window.getSelection()
     for (let i = 0; i < selection.rangeCount; i++) {
         let range = selection.getRangeAt(i)
