@@ -23,9 +23,13 @@ function mergeSimilar(targetNode) {
     if (targetNode.nodeName === "#text") return;
     if (targetNode.nodeName === "RUBY") return; // special case anyway so should be fine
 
-    while (targetNode.nextSibling
-    && targetNode.nodeName === targetNode.nextSibling.nodeName
-    && targetNode.className === targetNode.nextSibling.className) {
+    while (
+        targetNode.nextSibling
+        &&
+        targetNode.nodeName === targetNode.nextSibling.nodeName
+        &&
+        targetNode.className === targetNode.nextSibling.className
+        ) {
         targetNode.append(...targetNode.nextSibling.childNodes)
         targetNode.nextSibling.remove()
         rv = true
@@ -42,10 +46,13 @@ function formatParagraph() {
     while (true) {
         let p = document.getElementById('lyrics')
         p.innerHTML = p.innerHTML
-            .replaceAll(/\n\s*/g, '')
-            .replaceAll('<br>', '<br>\n')
+            .replaceAll(/\n\s*/g, ' ') // get rid of new lines, replacing them with just whitespace
+            .replaceAll('<br>', '<br>\n') // only add new lines to where <br> tags are
+            .replaceAll(/\n\s/g, '\n') // remove whitespace from start of lines
+            .trim() // from start of very first line too
         if (
-            removeEmpty(document.getElementById('lyrics')) ||
+            removeEmpty(document.getElementById('lyrics'))
+            ||
             mergeSimilar(document.getElementById('lyrics'))
         ) continue
 
