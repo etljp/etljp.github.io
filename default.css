@@ -1,3 +1,7 @@
+html {
+    padding-bottom: 1em;
+}
+
 body {
     background-color: #334;
     color: #eee;
@@ -53,4 +57,5 @@ i {
 
 mark {
     color: #fff;
+    border-radius: 3px;
 }

@@ -49,7 +49,8 @@ function createSelectionSpans(range) {
     let endSpan = document.createElement('span')
     endSpan.id = 'end'
 
-    if (startNode === endNode && range.commonAncestorContainer.nodeName !== "RUBY") {
+    if (startNode === endNode && startNode.nodeName !== "RUBY" && endNode.nodeName !== "RUBY") {
+        console.log('fast-path')
         let node = range.commonAncestorContainer
         let start = node.textContent.substring(0, range.startOffset)
         let selected = node.textContent.substring(range.startOffset, range.endOffset)
@@ -129,11 +130,17 @@ function markSelectionSpans(targetColor) {
 }
 
 function availableColors() {
-    let rv = []
+    let rv = ['white']
     for (let r of document.getElementById('colorSheet').sheet.cssRules) {
         rv.push(r.selectorText.substring(1))
     }
     return rv
+}
+
+function removeWhiteMarks(){
+    for (let white of document.querySelectorAll('mark.white')){
+        white.replaceWith(...white.childNodes)
+    }
 }
 
 function applyMark(targetColor = 'red') {
@@ -145,6 +152,56 @@ function applyMark(targetColor = 'red') {
         let range = selection.getRangeAt(i)
         createSelectionSpans(range)
         markSelectionSpans(targetColor)
+        removeWhiteMarks()
         formatParagraph()
     }
+    saveLyrics()
 }
+
+function saveLyrics(){
+    let lyrics = document.getElementById('lyrics')
+    localStorage.setItem('savedLyrics', lyrics.innerHTML)
+}
+
+
+document.addEventListener("DOMContentLoaded", () => {
+    // fill color selector with colors from css
+    let colorSelector = document.getElementById('colorSelector')
+    for (let color of availableColors()) {
+        let button = document.createElement('div')
+        button.className = "colorButton " + color
+        button.onclick = () => applyMark(color)
+        colorSelector.append(button)
+    }
+
+    // download button
+    let button = document.getElementById('downloadButton')
+    button.onclick = () => {
+        let lyrics = document.getElementById('lyrics')
+
+        let iframe = document.createElement('iframe')
+        let html = document.createElement('html')
+        html.innerHTML = headHtml
+        let body = document.createElement('body')
+        let p = document.createElement('p')
+        p.id = 'lyrics'
+        p.innerHTML = lyrics.innerHTML
+        body.append(p)
+        html.append(body)
+        iframe.append(html)
+
+        let a = document.createElement('a')
+        a.download = "lyrics.html"
+        a.href = `data:text/html,${encodeURIComponent(iframe.innerHTML)}`
+        a.target = "_blank"
+        a.click()
+        a.remove()
+    }
+
+    // fill editor with previous file
+    let savedLyrics = localStorage.getItem('savedLyrics')
+    if (!savedLyrics)
+        return
+    let lyrics = document.getElementById('lyrics')
+    lyrics.innerHTML = savedLyrics
+})
