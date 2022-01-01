@@ -14,6 +14,9 @@ function removeEmpty(targetNode = null) {
             rv = true
         }
     })
+    if (rv){
+        console.log('removed empty elements')
+    }
     return rv
 }
 
@@ -47,6 +50,9 @@ function mergeSimilar(targetNode) {
         rv = mergeSimilar(c) || rv
     }
 
+    if (rv){
+        console.log('merged similar elements')
+    }
     return rv
 }
 
@@ -65,10 +71,14 @@ function breakBrTags(targetNode) {
         let content = targetNode.innerHTML.replaceAll("<br>", endTag + "<br>" + startTag)
         targetNode.outerHTML = startTag + content + endTag
     }
+    if (rv){
+        console.log('broke up <br> tags')
+    }
     return rv
 }
 
 function formatParagraph() {
+    console.log('applying correct format to lyrics')
     while (true) {
         let p = document.getElementById('lyrics')
         p.innerHTML = p.innerHTML

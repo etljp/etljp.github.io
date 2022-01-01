@@ -7,12 +7,14 @@ function createSelectionSpans(range) {
     // walk out of <rt>
     let startNode = range.startContainer
     while (startNode.nodeName !== "P" && startNode.parentNode.nodeName !== "P") {
+        console.log('walking start out of rt')
         startNode = startNode.parentNode
         if (startNode.nodeName === "RUBY") break
     }
 
     let endNode = range.endContainer
     while (endNode.nodeName !== "P" && endNode.parentNode.nodeName !== "P") {
+        console.log('walking end out of rt')
         endNode = endNode.parentNode
         if (endNode.nodeName === "RUBY") break
     }
@@ -23,22 +25,28 @@ function createSelectionSpans(range) {
     endSpan.id = 'end'
 
     if (startNode === endNode && startNode.nodeName !== "RUBY" && endNode.nodeName !== "RUBY") {
-        console.log('fast-path')
+        // same node, can place <span>s into
+        console.log('both: fast path')
         let node = range.commonAncestorContainer
         let start = node.textContent.substring(0, range.startOffset)
         let selected = node.textContent.substring(range.startOffset, range.endOffset)
         let end = node.textContent.substring(range.endOffset)
         node.replaceWith(start, startSpan, selected, endSpan, end)
     } else {
+        // different nodes, must place <span>s individually
+
         // start
         if (startNode.nodeName === "RUBY") {
+            console.log('start: ruby path')
             startNode.before(startSpan)
         } else if (range.startContainer.nodeName === "#text") {
+            console.log('start: text path')
             let node = range.startContainer
             let start = node.textContent.substring(0, range.startOffset)
             let selected = node.textContent.substring(range.startOffset)
             node.replaceWith(start, startSpan, selected)
         } else if (range.startContainer.nodeName === "P") {
+            console.log('start: paragraph path')
             range.insertNode(startSpan)
         } else {
             console.error("can't create start span")
@@ -46,13 +54,16 @@ function createSelectionSpans(range) {
 
         // end
         if (endNode.nodeName === "RUBY") {
+            console.log('end: ruby path')
             endNode.after(endSpan)
         } else if (range.endContainer.nodeName === "#text") {
+            console.log('end: text path')
             let node = range.endContainer
             let selected = node.textContent.substring(0, range.endOffset)
             let end = node.textContent.substring(range.endOffset)
             node.replaceWith(selected, endSpan, end)
         } else if (range.endContainer.nodeName === "P") {
+            console.log('end: paragraph path')
             let helperRange = document.createRange();
             helperRange.setStart(range.endContainer, range.endOffset)
             helperRange.insertNode(endSpan)
@@ -66,11 +77,13 @@ function createSelectionSpans(range) {
 
 function makeChildOfP(targetSpan) {
     while (targetSpan.parentElement.nodeName !== "P") {
+        console.log("target span isn't child of lyrics yet")
         let children = Array.from(targetSpan.parentElement.childNodes)
         let index = children.indexOf(targetSpan)
         let start = children.slice(0, index)
         let end = children.slice(index + 1)
 
+        // get span's parent element, manually make two clones containing parent's content before and after the span
         let name = targetSpan.parentElement.nodeName
         let startElement = document.createElement(name)
         startElement.className = targetSpan.parentElement.className
@@ -79,19 +92,22 @@ function makeChildOfP(targetSpan) {
         endElement.className = targetSpan.parentElement.className
         endElement.append(...end)
 
+        // replace parent with clones
         targetSpan.parentElement.replaceWith(startElement, targetSpan, endElement)
+    }
+    console.log('target span is child of lyrics (now)')
+}
+
+function unwrapMarks(targetNode) {
+    for (let nested of targetNode.querySelectorAll('mark mark')) {
+        nested.replaceWith(...nested.childNodes)
+        console.log('un-nested a mark')
     }
 }
 
-// TODO: method to remove italics
-function unwrapMarks(targetNode) {
-    targetNode.childNodes.forEach((el) => {
-        if (targetNode.nodeName === "MARK" && el.nodeName === "MARK")
-            el.replaceWith(...el.childNodes)
-        unwrapMarks(el)
-    })
-}
-
+/**
+ * @description adds a <mark> element between start and end <span>s
+ */
 function markSelectionSpans(targetColor) {
     let startSpan = document.getElementById('start')
     let endSpan = document.getElementById('end')
@@ -109,6 +125,9 @@ function markSelectionSpans(targetColor) {
         &&
         targetColor === "italics"
     ) {
+        // we are adding italics inside a mark tag
+        // make sure we don't lose highlighting
+        console.log('making italics inside a mark')
         let newMark = document.createElement('mark')
         newMark.className = startSpan.nextElementSibling.className
         let selectedElement = document.createElement('i')
@@ -138,20 +157,23 @@ function availableColors() {
 function applySpecialMarks() {
     for (let white of document.querySelectorAll('mark.white')) {
         white.replaceWith(...white.childNodes)
+        console.log('applied whiteout')
     }
     for (let italics of document.querySelectorAll('mark.italics')) {
         let i = document.createElement('i')
         i.append(...italics.childNodes)
         italics.replaceWith(i)
+        console.log('applied italics')
     }
 }
 
-function removeItalicsIfNested(){
-    for (let nested of document.querySelectorAll('i i')){
-        if (nested.parentNode.children.length > 1){
+function removeItalicsIfNested() {
+    for (let nested of document.querySelectorAll('i i')) {
+        if (nested.parentNode.childNodes.length > 1) {
             continue
         }
         nested.parentElement.replaceWith(...nested.childNodes)
+        console.log('removed nested italics')
     }
 }
 
@@ -172,7 +194,9 @@ function applyMark(targetColor = 'red', checkIfValid = true) {
 }
 
 function saveLyrics() {
+    console.log('saving lyrics to localStorage')
     let lyrics = document.getElementById('lyrics')
+    localStorage.setItem('undoStep', localStorage.getItem('savedLyrics'))
     localStorage.setItem('savedLyrics', lyrics.innerHTML)
 }
 
@@ -205,6 +229,7 @@ document.addEventListener("DOMContentLoaded", () => {
         a.href = `data:text/html,${encodeURIComponent(html.outerHTML)}`
         a.target = "_blank"
         a.click()
+        console.log('downloaded lyrics')
     }
 
     // fill editor with previous file
@@ -230,10 +255,22 @@ document.addEventListener("DOMContentLoaded", () => {
     // TODO: press R in highlighting mode to edit <ruby> tags
 
     document.addEventListener('keydown', (e) => {
-        console.log(e.code)
         switch (e.code) {
             case 'KeyI':
                 applyMark('italics', false)
+                break
+            case 'KeyZ':
+                if (e.ctrlKey) {
+                    console.log("undo")
+                    let savedLyrics = localStorage.getItem('undoStep')
+                    if (!savedLyrics)
+                        return
+                    let lyrics = document.getElementById('lyrics')
+                    lyrics.innerHTML = savedLyrics
+                    localStorage.setItem('undoStep', localStorage.getItem('savedLyrics'))
+                    saveLyrics()
+                }
+                break
         }
     });
 })
@@ -287,12 +324,7 @@ window.addEventListener('load', () => {
         e.preventDefault()
         dropzone.style.visibility = "hidden"
 
-        for (let file of e.dataTransfer.files) {
-            file.text().then((data) => {
-                //
-            })
-            fileQueue.push(file)
-        }
+        fileQueue.push(...e.dataTransfer.files)
         if (!currentFile)
             nextFile()
 
@@ -301,6 +333,26 @@ window.addEventListener('load', () => {
         filePrompt.style.background = 'rgba(0, 0, 0, 0.5)'
 
         hasFocusNow = document.hasFocus()
+    }
+
+    let getFileContent = (fileData, isHtml) => {
+        let rv
+
+        if (isHtml) {
+            let html = (new DOMParser()).parseFromString(fileData, 'text/html')
+            let newLyrics = html.getElementById('lyrics')
+            if (!newLyrics) {
+                for (let body of html.getElementsByTagName('body')) {
+                    rv = body.innerHTML
+                }
+            } else {
+                rv = newLyrics.innerHTML
+            }
+        } else {
+            rv = fileData
+        }
+
+        return rv
     }
 
     document.getElementById('replace').addEventListener('click', () => {
@@ -312,29 +364,37 @@ window.addEventListener('load', () => {
         })
     })
     document.getElementById('interlace').addEventListener('click', () => {
-        console.log(currentFile)
-        console.log('interlace')
+        let isHtml = currentFile.name.toLowerCase().endsWith('.html')
+        currentFile.text().then((data) => {
+            let lyrics = document.getElementById('lyrics')
+            let oldString = lyrics.innerHTML
+            let newString = getFileContent(data, isHtml)
+            let oldLines = oldString.split('<br>')
+            let newLines = newString.split('<br>')
+            let oldTotal = oldLines.length
+            let newTotal = newLines.length
+            let interlacedLines = [oldLines.shift()]
+
+            while (oldLines.length > 0 || newLines.length > 0){
+                if (oldLines.length / oldTotal >= newLines.length / newTotal){
+                    interlacedLines.push(oldLines.shift())
+                } else {
+                    interlacedLines.push(newLines.shift())
+                }
+            }
+
+            lyrics.innerHTML = interlacedLines.join('<br>')
+
+            formatParagraph()
+            nextFile()
+        })
     })
     document.getElementById('append').addEventListener('click', () => {
         let isHtml = currentFile.name.toLowerCase().endsWith('.html')
         currentFile.text().then((data) => {
             let lyrics = document.getElementById('lyrics')
-            let newString
+            let newString = getFileContent(data, isHtml)
 
-            if (isHtml) {
-                let html = (new DOMParser()).parseFromString(data, 'text/html')
-                let newLyrics = html.getElementById('lyrics')
-                if (!newLyrics) {
-                    for (let body of html.getElementsByTagName('body')) {
-                        newString = body.innerHTML
-                    }
-                } else {
-                    newString = newLyrics.innerHTML
-                }
-            } else {
-                newString = data
-            }
-            console.log(newString)
             lyrics.innerHTML = lyrics.innerHTML + "<br>" + newString
             formatParagraph()
             nextFile()
