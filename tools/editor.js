@@ -6,13 +6,13 @@ function createSelectionSpans(range) {
     // TODO: bug in firefox, https://bugzilla.mozilla.org/show_bug.cgi?id=1746926
     // walk out of <rt>
     let startNode = range.startContainer
-    while (startNode.parentNode.nodeName !== "P") {
+    while (startNode.nodeName !== "P" && startNode.parentNode.nodeName !== "P") {
         startNode = startNode.parentNode
         if (startNode.nodeName === "RUBY") break
     }
 
     let endNode = range.endContainer
-    while (endNode.parentNode.nodeName !== "P") {
+    while (endNode.nodeName !== "P" && endNode.parentNode.nodeName !== "P") {
         endNode = endNode.parentNode
         if (endNode.nodeName === "RUBY") break
     }
@@ -38,6 +38,8 @@ function createSelectionSpans(range) {
             let start = node.textContent.substring(0, range.startOffset)
             let selected = node.textContent.substring(range.startOffset)
             node.replaceWith(start, startSpan, selected)
+        } else if (range.startContainer.nodeName === "P") {
+            range.insertNode(startSpan)
         } else {
             console.error("can't create start span")
         }
@@ -50,6 +52,11 @@ function createSelectionSpans(range) {
             let selected = node.textContent.substring(0, range.endOffset)
             let end = node.textContent.substring(range.endOffset)
             node.replaceWith(selected, endSpan, end)
+        } else if (range.endContainer.nodeName === "P") {
+            let helperRange = document.createRange();
+            helperRange.setStart(range.endContainer, range.endOffset)
+            helperRange.insertNode(endSpan)
+            helperRange.detach()
         } else {
             console.error("can't create end span")
             startSpan.remove()
@@ -76,9 +83,10 @@ function makeChildOfP(targetSpan) {
     }
 }
 
+// TODO: method to remove italics
 function unwrapMarks(targetNode) {
     targetNode.childNodes.forEach((el) => {
-        if (el.nodeName === "MARK")
+        if (targetNode.nodeName === "MARK" && el.nodeName === "MARK")
             el.replaceWith(...el.childNodes)
         unwrapMarks(el)
     })
@@ -94,12 +102,29 @@ function markSelectionSpans(targetColor) {
     let startIndex = children.indexOf(startSpan)
     let endIndex = children.indexOf(endSpan)
     let selection = children.slice(startIndex + 1, endIndex)
-    let selectedElement = document.createElement('mark')
-    selectedElement.className = targetColor
-    selectedElement.append(...selection)
-    unwrapMarks(selectedElement)
-    startSpan.replaceWith(selectedElement)
-    endSpan.remove()
+    if (
+        startSpan.nextElementSibling === endSpan.previousElementSibling
+        &&
+        startSpan.nextElementSibling.nodeName === "MARK"
+        &&
+        targetColor === "italics"
+    ) {
+        let newMark = document.createElement('mark')
+        newMark.className = startSpan.nextElementSibling.className
+        let selectedElement = document.createElement('i')
+        selectedElement.append(...startSpan.nextElementSibling.childNodes)
+        newMark.append(selectedElement)
+        startSpan.replaceWith(newMark)
+        endSpan.remove()
+    } else {
+        let selectedElement = document.createElement('mark')
+        selectedElement.className = targetColor
+        selectedElement.append(...selection)
+        unwrapMarks(selectedElement)
+        startSpan.replaceWith(selectedElement)
+        endSpan.remove()
+    }
+
 }
 
 function availableColors() {
@@ -110,14 +135,28 @@ function availableColors() {
     return rv
 }
 
-function removeWhiteMarks() {
+function applySpecialMarks() {
     for (let white of document.querySelectorAll('mark.white')) {
         white.replaceWith(...white.childNodes)
     }
+    for (let italics of document.querySelectorAll('mark.italics')) {
+        let i = document.createElement('i')
+        i.append(...italics.childNodes)
+        italics.replaceWith(i)
+    }
 }
 
-function applyMark(targetColor = 'red') {
-    if (!availableColors().includes(targetColor)) {
+function removeItalicsIfNested(){
+    for (let nested of document.querySelectorAll('i i')){
+        if (nested.parentNode.children.length > 1){
+            continue
+        }
+        nested.parentElement.replaceWith(...nested.childNodes)
+    }
+}
+
+function applyMark(targetColor = 'red', checkIfValid = true) {
+    if (checkIfValid && !availableColors().includes(targetColor)) {
         throw new Error(`${targetColor} is not a valid css class in colors.css`)
     }
     let selection = window.getSelection()
@@ -125,7 +164,8 @@ function applyMark(targetColor = 'red') {
         let range = selection.getRangeAt(i)
         createSelectionSpans(range)
         markSelectionSpans(targetColor)
-        removeWhiteMarks()
+        applySpecialMarks()
+        removeItalicsIfNested()
         formatParagraph()
     }
     saveLyrics()
@@ -173,6 +213,8 @@ document.addEventListener("DOMContentLoaded", () => {
         return
     let lyrics = document.getElementById('lyrics')
     lyrics.innerHTML = savedLyrics
+    formatParagraph()
+    saveLyrics()
 
     // add event listeners
     document.getElementById('editModeButton').addEventListener('click', () => {
@@ -184,14 +226,28 @@ document.addEventListener("DOMContentLoaded", () => {
         lyrics.className = lyrics.className === "forEditing" ? lyrics.className = "forHighlighting" : lyrics.className = "forEditing"
         window.getSelection().removeAllRanges()
     })
+
+    // TODO: press R in highlighting mode to edit <ruby> tags
+
+    document.addEventListener('keydown', (e) => {
+        console.log(e.code)
+        switch (e.code) {
+            case 'KeyI':
+                applyMark('italics', false)
+        }
+    });
 })
 
 window.addEventListener('load', () => {
     // setup dropzone
     let fileQueue = []
+    /** @type {File} */
     let currentFile
     let fileName = document.getElementById('fileName')
     let hasFocusNow = document.hasFocus()
+    window.addEventListener("blur", () => {
+        hasFocusNow = false
+    })
 
     let allowDrag = (e) => {
         e.preventDefault()
@@ -199,9 +255,15 @@ window.addEventListener('load', () => {
     }
 
     let nextFile = () => {
+        saveLyrics()
         if (fileQueue.length) {
             currentFile = fileQueue.shift()
             fileName.textContent = currentFile.name
+        } else {
+            filePrompt.style.opacity = '0'
+            filePrompt.style.visibility = 'hidden'
+            filePrompt.style.background = 'rgba(0, 0, 0, 0)'
+            currentFile = null
         }
     }
 
@@ -211,14 +273,7 @@ window.addEventListener('load', () => {
             hasFocusNow = document.hasFocus()
             return
         }
-        if (fileQueue.length) {
-            nextFile()
-        } else {
-            filePrompt.style.opacity = '0'
-            filePrompt.style.visibility = 'hidden'
-            filePrompt.style.background = 'rgba(0, 0, 0, 0)'
-            currentFile = null
-        }
+        nextFile()
     }
 
     let dropzone = document.getElementById('dropzone')
@@ -249,21 +304,45 @@ window.addEventListener('load', () => {
     }
 
     document.getElementById('replace').addEventListener('click', () => {
-        console.log(currentFile)
-        console.log('replace')
+        currentFile.text().then((data) => {
+            let lyrics = document.getElementById('lyrics')
+            lyrics.innerHTML = data
+            formatParagraph()
+            nextFile()
+        })
     })
     document.getElementById('interlace').addEventListener('click', () => {
         console.log(currentFile)
         console.log('interlace')
     })
     document.getElementById('append').addEventListener('click', () => {
-        console.log(currentFile)
-        console.log('append')
+        let isHtml = currentFile.name.toLowerCase().endsWith('.html')
+        currentFile.text().then((data) => {
+            let lyrics = document.getElementById('lyrics')
+            let newString
+
+            if (isHtml) {
+                let html = (new DOMParser()).parseFromString(data, 'text/html')
+                let newLyrics = html.getElementById('lyrics')
+                if (!newLyrics) {
+                    for (let body of html.getElementsByTagName('body')) {
+                        newString = body.innerHTML
+                    }
+                } else {
+                    newString = newLyrics.innerHTML
+                }
+            } else {
+                newString = data
+            }
+            console.log(newString)
+            lyrics.innerHTML = lyrics.innerHTML + "<br>" + newString
+            formatParagraph()
+            nextFile()
+        })
+    })
+
+    window.addEventListener('dragenter', () => {
+        document.getElementById('dropzone').style.visibility = "visible"
     })
 })
 
-window.addEventListener('dragenter', () => {
-    document.getElementById('dropzone').style.visibility = "visible"
-})
-
-// TODO: press R in highlighting mode to edit <ruby> tags (or probably make a separate page for furigana editing)
