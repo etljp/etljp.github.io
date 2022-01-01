@@ -3,7 +3,6 @@ function createSelectionSpans(range) {
         range = window.getSelection().getRangeAt(0)
     }
 
-    // bug in firefox, https://bugzilla.mozilla.org/show_bug.cgi?id=1746926
     // walk out of <rt>
     let startNode = range.startContainer
     while (startNode.nodeName !== "P" && startNode.parentNode.nodeName !== "P") {
@@ -36,7 +35,11 @@ function createSelectionSpans(range) {
     // end
     if (endNode.nodeName === "RUBY") {
         console.log('end: ruby path')
-        endNode.after(endSpan)
+        if (range.endOffset === 0) {
+            endNode.before(endSpan)
+        } else {
+            endNode.after(endSpan)
+        }
     } else {
         let helperRange = document.createRange();
         helperRange.setStart(range.endContainer, range.endOffset)
@@ -259,6 +262,7 @@ document.addEventListener("DOMContentLoaded", () => {
         switch (e.code) {
             case 'KeyI':
                 if (!currentlyEditing) {
+                    // chrome can do it anyway, this is for firefox which doesn't have ctrl+i
                     applyMark('italics', false)
                 }
                 break
