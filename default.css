@@ -39,6 +39,7 @@ i {
 
 #lyrics {
     padding-top: 5em;
+    display: inline-block;
 }
 
 .youtube {

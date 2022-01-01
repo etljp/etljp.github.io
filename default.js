@@ -7,14 +7,23 @@ function repeat(func, times) {
 
 function removeEmpty(targetNode = null) {
     let rv = false
-    targetNode.childNodes.forEach((el) => {
+    let func = (el) => {
         rv = removeEmpty(el)
-        if (el.textContent === "" && el.childNodes.length === 0 && el.nodeName !== "BR") {
+        if (el.textContent.trim().length === 0 && el.childNodes.length === 0 && el.nodeName !== "BR") {
             el.remove()
             rv = true
         }
-    })
-    if (rv){
+    }
+
+    if (targetNode.children)
+        for (let el of targetNode.children) {
+            func(el)
+        }
+    for (let el of targetNode.childNodes) {
+        func(el)
+    }
+
+    if (rv) {
         console.log('removed empty elements')
     }
     return rv
@@ -24,6 +33,7 @@ function mergeSimilar(targetNode) {
     let rv = false
     if (!targetNode) return
     if (targetNode.nodeName === "#text") return
+    if (targetNode.nodeName === "BR") return
     if (targetNode.nodeName === "RUBY") return // special case anyway so should be fine
 
     if (targetNode.nodeName === targetNode.parentNode.nodeName) {
@@ -50,8 +60,8 @@ function mergeSimilar(targetNode) {
         rv = mergeSimilar(c) || rv
     }
 
-    if (rv){
-        console.log('merged similar elements')
+    if (rv) {
+        console.log(`merged similar elements ${targetNode.nodeName}`)
     }
     return rv
 }
@@ -68,35 +78,47 @@ function breakBrTags(targetNode) {
         let classProp = targetNode.className ? `class="${targetNode.className}"` : ''
         let startTag = `<${targetNode.nodeName.toLowerCase()} ${classProp}>`
         let endTag = `</${targetNode.nodeName.toLowerCase()}>`
-        let content = targetNode.innerHTML.replaceAll("<br>", endTag + "<br>" + startTag)
+        let content = targetNode.innerHTML.replaceAll("<br>", endTag + "<br>\n" + startTag)
         targetNode.outerHTML = startTag + content + endTag
     }
-    if (rv){
+    if (rv) {
         console.log('broke up <br> tags')
     }
     return rv
+}
+
+function unwrapUnneededElements(targetNode) {
+    let unwanted = ['div', 'span']
+    let chromeOnly = ['b', 'u', 's']
+    for (let target of unwanted.concat(chromeOnly)) {
+        for (let el of targetNode.querySelectorAll(target)) {
+            console.log(`unwrapped unneeded elements ${el.nodeName}`)
+            let br = chromeOnly.includes(target) ? document.createElement('br') : ""
+            el.replaceWith(br, ...el.childNodes)
+        }
+    }
 }
 
 function formatParagraph() {
     console.log('applying correct format to lyrics')
     while (true) {
         let p = document.getElementById('lyrics')
+        let before = p.innerHTML
         p.innerHTML = p.innerHTML
             .replaceAll('class=""', '')
             .replaceAll(/\n\s*/g, ' ') // get rid of new lines, replacing them with just whitespace
-            .replaceAll('<br><br>','<br>') // remove all duplicated <br> tags
+            .replaceAll('<br><br><br>', '<br><br>')
             .replaceAll('<br>', '<br>\n') // only add new lines to where <br> tags are
             .replaceAll(/\n\s/g, '\n') // remove whitespace from start of lines
             .trim() // from start of very first line too
-        if (
-            removeEmpty(document.getElementById('lyrics'))
-            ||
-            mergeSimilar(document.getElementById('lyrics'))
-            ||
-            breakBrTags(document.getElementById('lyrics'))
-        ) continue
 
-        break
+        unwrapUnneededElements(document.getElementById('lyrics'))
+        removeEmpty(document.getElementById('lyrics'))
+        mergeSimilar(document.getElementById('lyrics'))
+        breakBrTags(document.getElementById('lyrics'))
+
+        if (before === p.innerHTML)
+            break
     }
 }
 

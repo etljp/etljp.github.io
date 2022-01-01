@@ -3,7 +3,7 @@ function createSelectionSpans(range) {
         range = window.getSelection().getRangeAt(0)
     }
 
-    // TODO: bug in firefox, https://bugzilla.mozilla.org/show_bug.cgi?id=1746926
+    // bug in firefox, https://bugzilla.mozilla.org/show_bug.cgi?id=1746926
     // walk out of <rt>
     let startNode = range.startContainer
     while (startNode.nodeName !== "P" && startNode.parentNode.nodeName !== "P") {
@@ -24,55 +24,26 @@ function createSelectionSpans(range) {
     let endSpan = document.createElement('span')
     endSpan.id = 'end'
 
-    if (startNode === endNode && startNode.nodeName !== "RUBY" && endNode.nodeName !== "RUBY") {
-        // same node, can place <span>s into
-        console.log('both: fast path')
-        let node = range.commonAncestorContainer
-        let start = node.textContent.substring(0, range.startOffset)
-        let selected = node.textContent.substring(range.startOffset, range.endOffset)
-        let end = node.textContent.substring(range.endOffset)
-        node.replaceWith(start, startSpan, selected, endSpan, end)
+
+    // start
+    if (startNode.nodeName === "RUBY") {
+        console.log('start: ruby path')
+        startNode.before(startSpan)
     } else {
-        // different nodes, must place <span>s individually
-
-        // start
-        if (startNode.nodeName === "RUBY") {
-            console.log('start: ruby path')
-            startNode.before(startSpan)
-        } else if (range.startContainer.nodeName === "#text") {
-            console.log('start: text path')
-            let node = range.startContainer
-            let start = node.textContent.substring(0, range.startOffset)
-            let selected = node.textContent.substring(range.startOffset)
-            node.replaceWith(start, startSpan, selected)
-        } else if (range.startContainer.nodeName === "P") {
-            console.log('start: paragraph path')
-            range.insertNode(startSpan)
-        } else {
-            console.error("can't create start span")
-        }
-
-        // end
-        if (endNode.nodeName === "RUBY") {
-            console.log('end: ruby path')
-            endNode.after(endSpan)
-        } else if (range.endContainer.nodeName === "#text") {
-            console.log('end: text path')
-            let node = range.endContainer
-            let selected = node.textContent.substring(0, range.endOffset)
-            let end = node.textContent.substring(range.endOffset)
-            node.replaceWith(selected, endSpan, end)
-        } else if (range.endContainer.nodeName === "P") {
-            console.log('end: paragraph path')
-            let helperRange = document.createRange();
-            helperRange.setStart(range.endContainer, range.endOffset)
-            helperRange.insertNode(endSpan)
-            helperRange.detach()
-        } else {
-            console.error("can't create end span")
-            startSpan.remove()
-        }
+        range.insertNode(startSpan)
     }
+
+    // end
+    if (endNode.nodeName === "RUBY") {
+        console.log('end: ruby path')
+        endNode.after(endSpan)
+    } else {
+        let helperRange = document.createRange();
+        helperRange.setStart(range.endContainer, range.endOffset)
+        helperRange.insertNode(endSpan)
+        helperRange.detach()
+    }
+
 }
 
 function makeChildOfP(targetSpan) {
@@ -169,11 +140,17 @@ function applySpecialMarks() {
 
 function removeItalicsIfNested() {
     for (let nested of document.querySelectorAll('i i')) {
-        if (nested.parentNode.childNodes.length > 1) {
-            continue
+        let theParentI = nested.parentElement
+        while (theParentI && theParentI.nodeName !== "I") {
+            theParentI = theParentI.parentElement
         }
-        nested.parentElement.replaceWith(...nested.childNodes)
-        console.log('removed nested italics')
+        if (!theParentI)
+            continue
+        for (let childI of theParentI.querySelectorAll('i')) {
+            childI.replaceWith(...childI.childNodes)
+        }
+        theParentI.replaceWith(...theParentI.childNodes)
+        console.log('found and removed nested italics')
     }
 }
 
@@ -213,6 +190,7 @@ document.addEventListener("DOMContentLoaded", () => {
     // download button
     let button = document.getElementById('downloadButton')
     button.onclick = () => {
+        formatParagraph()
         let lyrics = document.getElementById('lyrics')
 
         let html = document.createElement('html')
@@ -220,7 +198,7 @@ document.addEventListener("DOMContentLoaded", () => {
         let body = document.createElement('body')
         let p = document.createElement('p')
         p.id = 'lyrics'
-        p.innerHTML = lyrics.innerHTML
+        p.innerHTML = lyrics.innerHTML.replaceAll(/\n\s*/g, ' ').replaceAll('<br>', '<br>\n')
         body.append(p)
         html.getElementsByTagName('body')[0].replaceWith(body)
 
@@ -242,38 +220,50 @@ document.addEventListener("DOMContentLoaded", () => {
     saveLyrics()
 
     let saveID
-    // add event listeners
-    lyrics.addEventListener('input', () => {
-        if (saveID){
+    let timeoutHelper = () => {
+        if (saveID) {
             clearTimeout(saveID)
         }
         saveID = setTimeout(() => {
             saveLyrics()
             console.log('autosaved')
+            saveID = null
         }, 2000)
+    }
+
+    // add event listeners
+    lyrics.addEventListener('input', () => {
+        timeoutHelper()
     })
 
+    let currentlyEditing = true
     document.getElementById('editModeButton').addEventListener('click', () => {
+        currentlyEditing = !currentlyEditing
+
         let selector = document.getElementById('colorSelector')
         selector.className = selector.className === "hidden" ? "" : "hidden"
         let modeButton = document.getElementById('editModeButton')
         modeButton.className = modeButton.className === "colorButton highlighter" ? "colorButton pencil" : "colorButton highlighter"
         let lyrics = document.getElementById('lyrics')
-        lyrics.className = lyrics.className === "forEditing" ? lyrics.className = "forHighlighting" : lyrics.className = "forEditing"
-        lyrics.contentEditable = (!(lyrics.contentEditable === "true")).toString()
+        lyrics.contentEditable = currentlyEditing.toString()
         window.getSelection().removeAllRanges()
+        formatParagraph()
     })
 
     // TODO: press R in highlighting mode to edit <ruby> tags
 
     document.addEventListener('keydown', (e) => {
+        if (saveID) {
+            timeoutHelper()
+        }
         switch (e.code) {
             case 'KeyI':
-                applyMark('italics', false)
+                if (!currentlyEditing) {
+                    applyMark('italics', false)
+                }
                 break
             case 'KeyZ':
-                let lyrics = document.getElementById('lyrics')
-                if (lyrics.contentEditable === "false") {
+                if (!currentlyEditing) {
                     if (e.ctrlKey) {
                         console.log("undo")
                         let savedLyrics = localStorage.getItem('undoStep')

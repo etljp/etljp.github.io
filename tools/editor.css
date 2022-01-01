@@ -81,15 +81,6 @@ div.pencil svg.fa-pencil {
     background: #fff;
 }
 
-p.forHighlighting {
-    user-select: auto;
-}
-
-p.forEditing {
-    user-select: none;
-}
-
-
 #dropzone {
     position: fixed;
     top: 0;
@@ -123,7 +114,7 @@ p.forEditing {
     border-radius: 1em;
 }
 
-#fileName{
+#fileName {
     font-size: 3em;
     text-overflow: clip;
 }
@@ -137,3 +128,17 @@ p.forEditing {
 #filePrompt a:hover {
     text-decoration: underline;
 }
+
+
+#lyrics[contenteditable="true"] rt {
+    display: inline-block;
+    text-decoration: underline dotted white;
+}
+
+@-moz-document url-prefix() {
+    #lyrics[contenteditable="true"] rt {
+        display: ruby-text;
+        text-decoration: none;
+    }
+}
+
