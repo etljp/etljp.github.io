@@ -168,7 +168,7 @@ function applyMark(targetColor = 'red', checkIfValid = true) {
         markSelectionSpans(targetColor)
         applySpecialMarks()
         removeItalicsIfNested()
-        formatParagraph()
+        formatLyrics()
     }
     saveLyrics()
 }
@@ -193,7 +193,7 @@ document.addEventListener("DOMContentLoaded", () => {
     // download button
     let button = document.getElementById('downloadButton')
     button.onclick = () => {
-        formatParagraph()
+        formatLyrics()
         let lyrics = document.getElementById('lyrics')
 
         let html = document.createElement('html')
@@ -201,7 +201,12 @@ document.addEventListener("DOMContentLoaded", () => {
         let body = document.createElement('body')
         let p = document.createElement('p')
         p.id = 'lyrics'
-        p.innerHTML = lyrics.innerHTML.replaceAll(/\n\s*/g, ' ').replaceAll('<br>', '<br>\n')
+        p.innerHTML = '\n' +
+            lyrics.innerHTML
+                .replaceAll(/\n\s*/g, ' ') // get rid of new lines, replacing them with just whitespace
+                .replaceAll('<br>', '<br>\n') // only add new lines to where <br> tags are
+                .replaceAll(/\n\s/g, '\n') // remove whitespace from start of lines
+                .replaceAll(' <br>', '<br>') // remove whitespace from end of lines
         body.append(p)
         html.getElementsByTagName('body')[0].replaceWith(body)
 
@@ -219,7 +224,7 @@ document.addEventListener("DOMContentLoaded", () => {
         return
     let lyrics = document.getElementById('lyrics')
     lyrics.innerHTML = savedLyrics
-    formatParagraph()
+    formatLyrics()
     saveLyrics()
 
     let saveID
@@ -250,7 +255,7 @@ document.addEventListener("DOMContentLoaded", () => {
         let lyrics = document.getElementById('lyrics')
         lyrics.contentEditable = currentlyEditing.toString()
         window.getSelection().removeAllRanges()
-        formatParagraph()
+        formatLyrics()
     })
 
     // TODO: press R in highlighting mode to edit <ruby> tags
@@ -365,10 +370,11 @@ window.addEventListener('load', () => {
     }
 
     document.getElementById('replace').addEventListener('click', () => {
+        let isHtml = currentFile.name.toLowerCase().endsWith('.html')
         currentFile.text().then((data) => {
             let lyrics = document.getElementById('lyrics')
-            lyrics.innerHTML = data
-            formatParagraph()
+            lyrics.innerHTML = getFileContent(data, isHtml)
+            formatLyrics()
             nextFile()
         })
     })
@@ -394,7 +400,7 @@ window.addEventListener('load', () => {
 
             lyrics.innerHTML = interlacedLines.join('<br>')
 
-            formatParagraph()
+            formatLyrics()
             nextFile()
         })
     })
@@ -405,7 +411,7 @@ window.addEventListener('load', () => {
             let newString = getFileContent(data, isHtml)
 
             lyrics.innerHTML = lyrics.innerHTML + "<br>" + newString
-            formatParagraph()
+            formatLyrics()
             nextFile()
         })
     })

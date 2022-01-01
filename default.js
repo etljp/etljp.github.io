@@ -99,17 +99,14 @@ function unwrapUnneededElements(targetNode) {
     }
 }
 
-function formatParagraph() {
+function formatLyrics() {
     console.log('applying correct format to lyrics')
     while (true) {
-        let p = document.getElementById('lyrics')
-        let before = p.innerHTML
-        p.innerHTML = p.innerHTML
+        let lyrics = document.getElementById('lyrics')
+        let before = lyrics.innerHTML
+        lyrics.innerHTML = lyrics.innerHTML
             .replaceAll('class=""', '')
-            .replaceAll(/\n\s*/g, ' ') // get rid of new lines, replacing them with just whitespace
             .replaceAll('<br><br><br>', '<br><br>')
-            .replaceAll('<br>', '<br>\n') // only add new lines to where <br> tags are
-            .replaceAll(/\n\s/g, '\n') // remove whitespace from start of lines
             .trim() // from start of very first line too
 
         unwrapUnneededElements(document.getElementById('lyrics'))
@@ -117,9 +114,15 @@ function formatParagraph() {
         mergeSimilar(document.getElementById('lyrics'))
         breakBrTags(document.getElementById('lyrics'))
 
-        if (before === p.innerHTML)
+        for (let i of lyrics.querySelectorAll('i')){
+            if (i.textContent.startsWith(' ') && i.previousSibling.nodeName === "BR"){
+                i.innerHTML = i.innerHTML.substring(1)
+            }
+        }
+
+        if (before === lyrics.innerHTML)
             break
     }
 }
 
-document.addEventListener("DOMContentLoaded", formatParagraph)
+document.addEventListener("DOMContentLoaded", formatLyrics)
