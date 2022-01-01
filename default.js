@@ -84,6 +84,7 @@ function formatParagraph() {
         p.innerHTML = p.innerHTML
             .replaceAll('class=""', '')
             .replaceAll(/\n\s*/g, ' ') // get rid of new lines, replacing them with just whitespace
+            .replaceAll('<br><br>','<br>') // remove all duplicated <br> tags
             .replaceAll('<br>', '<br>\n') // only add new lines to where <br> tags are
             .replaceAll(/\n\s/g, '\n') // remove whitespace from start of lines
             .trim() // from start of very first line too

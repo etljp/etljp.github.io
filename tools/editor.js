@@ -241,7 +241,18 @@ document.addEventListener("DOMContentLoaded", () => {
     formatParagraph()
     saveLyrics()
 
+    let saveID
     // add event listeners
+    lyrics.addEventListener('input', () => {
+        if (saveID){
+            clearTimeout(saveID)
+        }
+        saveID = setTimeout(() => {
+            saveLyrics()
+            console.log('autosaved')
+        }, 2000)
+    })
+
     document.getElementById('editModeButton').addEventListener('click', () => {
         let selector = document.getElementById('colorSelector')
         selector.className = selector.className === "hidden" ? "" : "hidden"
@@ -249,6 +260,7 @@ document.addEventListener("DOMContentLoaded", () => {
         modeButton.className = modeButton.className === "colorButton highlighter" ? "colorButton pencil" : "colorButton highlighter"
         let lyrics = document.getElementById('lyrics')
         lyrics.className = lyrics.className === "forEditing" ? lyrics.className = "forHighlighting" : lyrics.className = "forEditing"
+        lyrics.contentEditable = (!(lyrics.contentEditable === "true")).toString()
         window.getSelection().removeAllRanges()
     })
 
@@ -260,15 +272,18 @@ document.addEventListener("DOMContentLoaded", () => {
                 applyMark('italics', false)
                 break
             case 'KeyZ':
-                if (e.ctrlKey) {
-                    console.log("undo")
-                    let savedLyrics = localStorage.getItem('undoStep')
-                    if (!savedLyrics)
-                        return
-                    let lyrics = document.getElementById('lyrics')
-                    lyrics.innerHTML = savedLyrics
-                    localStorage.setItem('undoStep', localStorage.getItem('savedLyrics'))
-                    saveLyrics()
+                let lyrics = document.getElementById('lyrics')
+                if (lyrics.contentEditable === "false") {
+                    if (e.ctrlKey) {
+                        console.log("undo")
+                        let savedLyrics = localStorage.getItem('undoStep')
+                        if (!savedLyrics)
+                            return
+                        let lyrics = document.getElementById('lyrics')
+                        lyrics.innerHTML = savedLyrics
+                        localStorage.setItem('undoStep', localStorage.getItem('savedLyrics'))
+                        saveLyrics()
+                    }
                 }
                 break
         }
@@ -370,13 +385,13 @@ window.addEventListener('load', () => {
             let oldString = lyrics.innerHTML
             let newString = getFileContent(data, isHtml)
             let oldLines = oldString.split('<br>')
-            let newLines = newString.split('<br>')
+            let newLines = newString.split(isHtml ? '<br>' : '\n')
             let oldTotal = oldLines.length
             let newTotal = newLines.length
             let interlacedLines = [oldLines.shift()]
 
-            while (oldLines.length > 0 || newLines.length > 0){
-                if (oldLines.length / oldTotal >= newLines.length / newTotal){
+            while (oldLines.length > 0 || newLines.length > 0) {
+                if (oldLines.length / oldTotal >= newLines.length / newTotal) {
                     interlacedLines.push(oldLines.shift())
                 } else {
                     interlacedLines.push(newLines.shift())
