@@ -1,30 +1,3 @@
-function walkSiblings(callback = (cur) => console.log(cur)) {
-    let selection = window.getSelection()
-    console.log(selection)
-    for (let i = 0; i < selection.rangeCount; i++) {
-        let range = selection.getRangeAt(i)
-        console.log(range)
-
-        // selection checking should start from an element that has <p> as its parent
-        let endNode = range.endContainer
-        while (endNode.parentNode.nodeName !== "P")
-            endNode = endNode.parentNode
-
-        let currentNode = range.startContainer
-        while (currentNode.parentNode.nodeName !== "P")
-            currentNode = currentNode.parentNode
-
-        callback(currentNode)
-        while (currentNode !== endNode) {
-            if (currentNode.nextSibling) {
-                currentNode = currentNode.nextSibling
-                callback(currentNode)
-            } else
-                break
-        }
-    }
-}
-
 function createSelectionSpans(range) {
     if (!range) {
         range = window.getSelection().getRangeAt(0)
@@ -137,8 +110,8 @@ function availableColors() {
     return rv
 }
 
-function removeWhiteMarks(){
-    for (let white of document.querySelectorAll('mark.white')){
+function removeWhiteMarks() {
+    for (let white of document.querySelectorAll('mark.white')) {
         white.replaceWith(...white.childNodes)
     }
 }
@@ -158,11 +131,10 @@ function applyMark(targetColor = 'red') {
     saveLyrics()
 }
 
-function saveLyrics(){
+function saveLyrics() {
     let lyrics = document.getElementById('lyrics')
     localStorage.setItem('savedLyrics', lyrics.innerHTML)
 }
-
 
 document.addEventListener("DOMContentLoaded", () => {
     // fill color selector with colors from css
@@ -179,7 +151,6 @@ document.addEventListener("DOMContentLoaded", () => {
     button.onclick = () => {
         let lyrics = document.getElementById('lyrics')
 
-        let iframe = document.createElement('iframe')
         let html = document.createElement('html')
         html.innerHTML = headHtml
         let body = document.createElement('body')
@@ -187,15 +158,13 @@ document.addEventListener("DOMContentLoaded", () => {
         p.id = 'lyrics'
         p.innerHTML = lyrics.innerHTML
         body.append(p)
-        html.append(body)
-        iframe.append(html)
+        html.getElementsByTagName('body')[0].replaceWith(body)
 
         let a = document.createElement('a')
         a.download = "lyrics.html"
-        a.href = `data:text/html,${encodeURIComponent(iframe.innerHTML)}`
+        a.href = `data:text/html,${encodeURIComponent(html.outerHTML)}`
         a.target = "_blank"
         a.click()
-        a.remove()
     }
 
     // fill editor with previous file
@@ -204,4 +173,97 @@ document.addEventListener("DOMContentLoaded", () => {
         return
     let lyrics = document.getElementById('lyrics')
     lyrics.innerHTML = savedLyrics
+
+    // add event listeners
+    document.getElementById('editModeButton').addEventListener('click', () => {
+        let selector = document.getElementById('colorSelector')
+        selector.className = selector.className === "hidden" ? "" : "hidden"
+        let modeButton = document.getElementById('editModeButton')
+        modeButton.className = modeButton.className === "colorButton highlighter" ? "colorButton pencil" : "colorButton highlighter"
+        let lyrics = document.getElementById('lyrics')
+        lyrics.className = lyrics.className === "forEditing" ? lyrics.className = "forHighlighting" : lyrics.className = "forEditing"
+        window.getSelection().removeAllRanges()
+    })
 })
+
+window.addEventListener('load', () => {
+    // setup dropzone
+    let fileQueue = []
+    let currentFile
+    let fileName = document.getElementById('fileName')
+    let hasFocusNow = document.hasFocus()
+
+    let allowDrag = (e) => {
+        e.preventDefault()
+        e.dataTransfer.dropEffect = e.dataTransfer.types.includes('Files') ? 'move' : 'none';
+    }
+
+    let nextFile = () => {
+        if (fileQueue.length) {
+            currentFile = fileQueue.shift()
+            fileName.textContent = currentFile.name
+        }
+    }
+
+    let filePrompt = document.getElementById('filePrompt')
+    filePrompt.onclick = () => {
+        if (!hasFocusNow) {
+            hasFocusNow = document.hasFocus()
+            return
+        }
+        if (fileQueue.length) {
+            nextFile()
+        } else {
+            filePrompt.style.opacity = '0'
+            filePrompt.style.visibility = 'hidden'
+            filePrompt.style.background = 'rgba(0, 0, 0, 0)'
+            currentFile = null
+        }
+    }
+
+    let dropzone = document.getElementById('dropzone')
+    dropzone.draggable = true
+    dropzone.ondragleave = () => {
+        dropzone.style.visibility = "hidden"
+    }
+    dropzone.ondragenter = allowDrag
+    dropzone.ondragover = allowDrag
+    dropzone.ondrop = (e) => {
+        e.preventDefault()
+        dropzone.style.visibility = "hidden"
+
+        for (let file of e.dataTransfer.files) {
+            file.text().then((data) => {
+                //
+            })
+            fileQueue.push(file)
+        }
+        if (!currentFile)
+            nextFile()
+
+        filePrompt.style.opacity = '1'
+        filePrompt.style.visibility = 'visible'
+        filePrompt.style.background = 'rgba(0, 0, 0, 0.5)'
+
+        hasFocusNow = document.hasFocus()
+    }
+
+    document.getElementById('replace').addEventListener('click', () => {
+        console.log(currentFile)
+        console.log('replace')
+    })
+    document.getElementById('interlace').addEventListener('click', () => {
+        console.log(currentFile)
+        console.log('interlace')
+    })
+    document.getElementById('append').addEventListener('click', () => {
+        console.log(currentFile)
+        console.log('append')
+    })
+})
+
+window.addEventListener('dragenter', () => {
+    document.getElementById('dropzone').style.visibility = "visible"
+})
+
+// TODO: press R in highlighting mode to edit <ruby> tags (or probably make a separate page for furigana editing)

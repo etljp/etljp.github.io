@@ -8,41 +8,68 @@ html {
     height: 80px;
     left: 0;
     bottom: 0;
-    justify-content: center;
     display: flex;
+    justify-content: center;
+    transition: transform 0.5s ease;
+}
+
+#colorSelector.hidden {
+    transform: translate(0%, 100%)
 }
 
 .colorButton {
     width: 50px;
     height: 50px;
+    user-select: none;
+    border-radius: 10px;
+}
+
+#colorSelector .colorButton {
     margin-top: 15px;
     margin-left: 3px;
     margin-right: 3px;
-    user-select: none;
-    border-radius: 10px;
 }
 
 #downloadButton {
     background: #22d;
     position: fixed;
-    top: 0;
+    top: 15px;
     right: 15px;
 }
 
-#downloadButton svg {
-    width: auto;
+#editModeButton {
+    background: #888;
+    position: fixed;
+    top: 15px;
+    left: 15px;
+}
+
+svg {
+    position: absolute;
+    width: 66%;
     height: 66%;
     margin-top: 17%;
+    left: 0;
+    right: 0;
+    margin-left: auto;
+    margin-right: auto;
+    transition: opacity 0.5s ease-out;
 }
 
-#editButton {
-    position: fixed;
-    visibility: hidden;
+div.highlighter svg.fa-highlighter {
+    opacity: 1;
 }
 
-#editButton svg{
-    width: auto;
-    height: 100%;
+div.pencil svg.fa-highlighter {
+    opacity: 0;
+}
+
+div.highlighter svg.fa-pencil {
+    opacity: 0;
+}
+
+div.pencil svg.fa-pencil {
+    opacity: 1;
 }
 
 .white {
@@ -52,4 +79,61 @@ html {
 
 .colorButton.white {
     background: #fff;
+}
+
+p.forHighlighting {
+    user-select: auto;
+}
+
+p.forEditing {
+    user-select: none;
+}
+
+
+#dropzone {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 999;
+    visibility: hidden;
+}
+
+#filePrompt {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0);
+    opacity: 0;
+    visibility: hidden;
+    display: flex;
+    justify-content: center;
+    transition: opacity 0.3s, background-color 0.3s, visibility 0.4s;
+}
+
+#filePrompt p {
+    position: absolute;
+    width: 100%;
+    top: 10%;
+    background: #22a;
+    padding: 1em;
+    border-radius: 1em;
+}
+
+#fileName{
+    font-size: 3em;
+    text-overflow: clip;
+}
+
+#filePrompt a {
+    cursor: pointer;
+    font-size: 2em;
+    margin: 0.5em;
+}
+
+#filePrompt a:hover {
+    text-decoration: underline;
 }
