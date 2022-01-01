@@ -35,6 +35,17 @@
             newRt.innerHTML = rt.innerHTML
             rt.replaceWith(newRt)
         }
+        for (let textNode of [...container.childNodes].filter(n => n.nodeName === "#text")) {
+            let cont = textNode.textContent.trim()
+            let match = cont.match(/[\x00-\xFF]+/)
+            if (match && match.length === 1 && match[0] === cont) {
+                let i = document.createElement('i')
+                i.textContent = textNode.textContent
+                textNode.replaceWith(i)
+            } else {
+               // maybe use capture groups to replace ascii anyway
+            }
+        }
 
         // save lyrics
         let html = document.createElement('html')
