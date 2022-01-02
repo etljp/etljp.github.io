@@ -2,6 +2,7 @@
 // @name         Extract lyrics from utaten
 // @version      0.1
 // @author       LittleEndu
+// @updateURL    https://etljp.github.io/tools/utaten-lyric-extractor.user.js
 // @match        https://utaten.com/lyric/*
 // @grant        none
 // ==/UserScript==
