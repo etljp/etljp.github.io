@@ -170,14 +170,72 @@ function applyMark(targetColor = 'red', checkIfValid = true) {
         removeItalicsIfNested()
         formatLyrics()
     }
-    saveLyrics()
 }
 
-function saveLyrics() {
+function scrollToTextNode(textNode) {
+    let alert = document.getElementById('alert')
+    let html = document.getElementsByTagName('html')[0]
+    let range = document.createRange();
+    range.selectNodeContents(textNode);
+    let temp = document.createElement('span')
+    temp.className = "alert"
+    range.insertNode(temp)
+    temp.scrollIntoView({block: "center"})
+    alert.style.top = (temp.offsetTop - html.scrollTop).toString() + "px"
+    alert.style.left = temp.offsetLeft.toString() + "px"
+    alert.style.transition = ""
+    alert.style.opacity = "1"
+    setTimeout(() => {
+        alert.style.transition = "opacity 2s ease"
+        alert.style.opacity = "0"
+    }, 5)
+    temp.remove()
+}
+
+
+/**
+ * @param {function} errorFunction
+ * @param {string} errorId
+ * @param {string} errorText
+ */
+function addAnError(errorFunction, errorId, errorText) {
+    let errors = errorFunction()
+    if (errors.length > 0) {
+        let anchor = document.getElementById(errorId) || document.createElement('a')
+        anchor.id = errorId
+        anchor.textContent = errorText
+        anchor.onclick = () => scrollToTextNode(errors[0])
+        document.getElementById('sanityErrors').append(anchor)
+        return true
+    } else {
+        let anchor = document.getElementById(errorId)
+        if (anchor)
+            anchor.remove()
+        return false
+    }
+}
+
+let currentlyEditing = true
+
+function onLyricsMutation() {
+    // save lyrics
     console.log('saving lyrics to localStorage')
     let lyrics = document.getElementById('lyrics')
     localStorage.setItem('undoStep', localStorage.getItem('savedLyrics'))
     localStorage.setItem('savedLyrics', lyrics.innerHTML)
+
+    // check for errors
+    let hasErrors = false
+    let errorGenerators = [
+        () => addAnError(checkMissingItalics, 'italicsError', "On a line with non-Latin characters found Latin characters not in italics!"),
+        () => addAnError(kanjiOutsideRuby, 'kanjiError', `Found a kanji that's not in a ruby tag! ${currentlyEditing ? '(Go to edit mode and hold R to fix)' : '(Hold R to rectify)'}`)
+    ]
+    for (let callable of errorGenerators) {
+        hasErrors = callable() || hasErrors
+    }
+
+    let errorDiv = document.getElementById('sanityErrors')
+    errorDiv.className = hasErrors ? "" : "hidden"
 }
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -225,7 +283,6 @@ document.addEventListener("DOMContentLoaded", () => {
     let lyrics = document.getElementById('lyrics')
     lyrics.innerHTML = savedLyrics
     formatLyrics()
-    saveLyrics()
 
     let saveID
     let timeoutHelper = () => {
@@ -233,18 +290,19 @@ document.addEventListener("DOMContentLoaded", () => {
             clearTimeout(saveID)
         }
         saveID = setTimeout(() => {
-            saveLyrics()
+            onLyricsMutation()
             console.log('autosaved')
             saveID = null
-        }, 2000)
+        }, 1000)
     }
 
-    // add event listeners
-    lyrics.addEventListener('input', () => {
-        timeoutHelper()
-    })
+    // add mutation observer for saving and sanity checks
+    const observer = new MutationObserver(timeoutHelper)
+    lyrics.addEventListener('input', timeoutHelper)
+    observer.observe(lyrics, {attributes: true, childList: true, subtree: true})
+    onLyricsMutation()
 
-    let currentlyEditing = true
+    // add event listeners
     document.getElementById('editModeButton').addEventListener('click', () => {
         currentlyEditing = !currentlyEditing
 
@@ -258,12 +316,16 @@ document.addEventListener("DOMContentLoaded", () => {
         formatLyrics()
     })
 
-    // TODO: press R in highlighting mode to edit <ruby> tags
+    let holdingR = false
+    document.addEventListener('keyup', (e) => {
+        switch (e.code) {
+            case 'KeyR':
+                holdingR = false
+                break
+        }
+    })
 
     document.addEventListener('keydown', (e) => {
-        if (saveID) {
-            timeoutHelper()
-        }
         switch (e.code) {
             case 'KeyI':
                 if (!currentlyEditing) {
@@ -275,15 +337,81 @@ document.addEventListener("DOMContentLoaded", () => {
                 if (!currentlyEditing) {
                     if (e.ctrlKey) {
                         console.log("undo")
-                        let savedLyrics = localStorage.getItem('undoStep')
-                        if (!savedLyrics)
+                        let previousLyrics = localStorage.getItem('undoStep')
+                        if (!previousLyrics)
                             return
                         let lyrics = document.getElementById('lyrics')
-                        lyrics.innerHTML = savedLyrics
-                        localStorage.setItem('undoStep', localStorage.getItem('savedLyrics'))
-                        saveLyrics()
+                        lyrics.innerHTML = previousLyrics
+                        setTimeout(() => {
+                            clearTimeout(saveID)
+                            onLyricsMutation()
+                        }, 5)
                     }
                 }
+                break
+            case 'KeyR':
+                if (holdingR || currentlyEditing)
+                    break
+                holdingR = true
+                
+                let nodesThatNeedRubyTags = []
+                let fillTheArray = () => {
+                    for (let textNode of [...document.getElementById('lyrics').childNodes].filter(n => n.nodeName === "#text")) {
+                        if (/\p{Ideographic}/u.test(textNode.textContent)) {
+                            nodesThatNeedRubyTags.push(textNode)
+                        }
+                    }
+                }
+
+                (async () => {
+                    fillTheArray()
+                    while (holdingR && nodesThatNeedRubyTags.length > 0) {
+                        let textNode = nodesThatNeedRubyTags.shift()
+                        let match = textNode.textContent.match(/(\P{Ideographic}*)(\p{Ideographic}+)(.*)/u)
+                        let kanji = match[2]
+                        let afterText = match[3]
+                        let rubyTag = document.createElement('ruby')
+                        let rtTag = document.createElement('rt')
+                        let response = await fetch(`https://kanjiapi.dev/v1/words/${kanji[0]}`)
+                        let data = await response.json()
+
+                        let matches = []
+                        // match compound words (like 未来宇宙)
+                        let searchAmount = kanji.length + 1
+                        let reKanji = kanji
+                        while (matches.length === 0) {
+                            searchAmount--
+                            reKanji = kanji.substr(0, searchAmount)
+                            if (!reKanji)
+                                break
+                            let re = new RegExp(`^${reKanji}\\P{Ideographic}*$`, 'u')
+                            matches = data.filter(el => el["variants"][0]["written"].match(re))
+                        }
+
+                        if (!reKanji)
+                            continue
+                        rubyTag.innerHTML = reKanji
+                        if (kanji.length !== searchAmount)
+                            afterText = kanji.substr(-(kanji.length - searchAmount)) + afterText
+
+                        let getPriorities = (el) => el["variants"][0]["priorities"].length
+                        let candidate = matches.sort((el1, el2) => {
+                            return getPriorities(el2) - getPriorities(el1)
+                        })[0]["variants"][0]
+                        let writing = candidate["written"]
+                        let pronunciation = candidate["pronounced"]
+                        while (writing.slice(-1) === pronunciation.slice(-1)) {
+                            writing = writing.substr(0, writing.length - 1)
+                            pronunciation = pronunciation.substr(0, pronunciation.length - 1)
+                        }
+                        rtTag.innerHTML = pronunciation
+                        rubyTag.append(rtTag)
+                        rubyTag.scrollIntoView({block: "center"})
+                        textNode.replaceWith(match[1], rubyTag, afterText)
+                        if (nodesThatNeedRubyTags.length === 0)
+                            fillTheArray()
+                    }
+                })()
                 break
         }
     });
@@ -306,7 +434,7 @@ window.addEventListener('load', () => {
     }
 
     let nextFile = () => {
-        saveLyrics()
+        formatLyrics()
         if (fileQueue.length) {
             currentFile = fileQueue.shift()
             fileName.textContent = currentFile.name
@@ -355,12 +483,12 @@ window.addEventListener('load', () => {
         if (isHtml) {
             let html = (new DOMParser()).parseFromString(fileData, 'text/html')
             let newLyrics = html.getElementById('lyrics')
-            if (!newLyrics) {
+            if (newLyrics) {
+                rv = newLyrics.innerHTML
+            } else {
                 for (let body of html.getElementsByTagName('body')) {
                     rv = body.innerHTML
                 }
-            } else {
-                rv = newLyrics.innerHTML
             }
         } else {
             rv = fileData
@@ -374,7 +502,6 @@ window.addEventListener('load', () => {
         currentFile.text().then((data) => {
             let lyrics = document.getElementById('lyrics')
             lyrics.innerHTML = getFileContent(data, isHtml)
-            formatLyrics()
             nextFile()
         })
     })
@@ -400,7 +527,6 @@ window.addEventListener('load', () => {
 
             lyrics.innerHTML = interlacedLines.join('<br>')
 
-            formatLyrics()
             nextFile()
         })
     })
@@ -411,7 +537,6 @@ window.addEventListener('load', () => {
             let newString = getFileContent(data, isHtml)
 
             lyrics.innerHTML = lyrics.innerHTML + "<br>" + newString
-            formatLyrics()
             nextFile()
         })
     })

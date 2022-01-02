@@ -120,17 +120,56 @@ div.pencil svg.fa-pencil {
 }
 
 #filePrompt a {
-    cursor: pointer;
     font-size: 2em;
     margin: 0.5em;
 }
 
-#filePrompt a:hover {
+a {
+    cursor: pointer;
+}
+
+a:hover {
     text-decoration: underline;
 }
 
+#sanityErrors {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    padding-top: 0.5em;
+    padding-bottom: 0.5em;
+    color: #fff;
+    visibility: visible;
+    pointer-events: none;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    transition: transform 0.5s ease, visibility 0.5s ease;
+}
 
-#lyrics[contenteditable="true"] rt {
+#sanityErrors a,
+#sanityErrors span {
+    background-color: rgba(188, 11, 11, 0.7);
+    pointer-events: auto;
+    text-shadow: 1px 1px black;
+}
+
+#sanityErrors.hidden {
+    transform: translate(0%, -100%);
+    visibility: hidden;
+}
+
+#alert {
+    position: fixed;
+    width: 5em;
+    height: 1em;
+    background: linear-gradient(0.25turn, rgba(255, 255, 0, 0.6), rgba(255, 0, 0, 0));;
+    opacity: 0;
+    pointer-events: none;
+}
+
+#lyrics rt {
     font-size: 10%;
     opacity: 0.5;
     display: inline-block;
@@ -139,7 +178,7 @@ div.pencil svg.fa-pencil {
 }
 
 @-moz-document url-prefix() {
-    #lyrics[contenteditable="true"] rt {
+    #lyrics rt {
         font-size: 66%;
         opacity: 1;
         display: ruby-text;

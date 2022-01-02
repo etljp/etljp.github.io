@@ -6,7 +6,7 @@
 // @match        https://utaten.com/lyric/*
 // @grant        none
 // ==/UserScript==
-
+// noinspection DuplicatedCode
 
 (() => {
     let div = document.createElement('div')
@@ -36,15 +36,26 @@
             newRt.innerHTML = rt.innerHTML
             rt.replaceWith(newRt)
         }
-        for (let textNode of [...container.childNodes].filter(n => n.nodeName === "#text")) {
-            let cont = textNode.textContent.trim()
-            let match = cont.match(/[\x00-\xFF]+/)
-            if (match && match.length === 1 && match[0] === cont) {
-                let i = document.createElement('i')
-                i.textContent = textNode.textContent
-                textNode.replaceWith(i)
+
+        let captureReplace = (content) => {
+            let groups = content.match(/([^\x00-\xFF]*)([\x41-\xFF\s]+)([^\x00-\xFF]*)/)
+            if (groups && groups[2].trim().length > 0) {
+                let firstHTML = captureReplace(groups[1])
+                let secondHTML = `<i>${groups[2].trim()}</i>`
+                let thirdHTML = captureReplace(groups[3])
+                return firstHTML + ' ' + secondHTML + ' ' + thirdHTML
             } else {
-               // maybe use capture groups to replace ascii anyway
+                return content
+            }
+        }
+
+        for (let textNode of [...container.childNodes].filter(n => n.nodeName === "#text")) {
+            let content = textNode.textContent.trim()
+            let capturedContent = captureReplace(content)
+            if (content !== capturedContent) {
+                let tempEl = document.createElement('span')
+                tempEl.innerHTML = capturedContent
+                textNode.replaceWith(...tempEl.childNodes)
             }
         }
 

@@ -8,8 +8,9 @@
     <link rel="stylesheet" href="../colors.css" id="colorSheet">
     <link rel="stylesheet" href="./editor.css">
     <script src="../default.js"></script>
-    <script src="./editor.js"></script>
     <script src="./constants.js"></script>
+    <script src="./sanityChecks.js"></script>
+    <script src="./editor.js"></script>
     <meta property="og:title" content="etljp - Editor"/>
     <meta property="og:type" content="website"/>
     <meta property="og:url" content="https://etljp.github.io/tools/editor">
@@ -48,5 +49,9 @@
         <a id="cancel">Cancel</a><br>
     </p>
 </div>
+<div id="sanityErrors" class="hidden">
+    <span>Errors were found!</span>
+</div>
+<div id="alert"></div>
 </body>
 </html>

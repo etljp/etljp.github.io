@@ -99,6 +99,14 @@ function unwrapUnneededElements(targetNode) {
     }
 }
 
+function unwrapRubyIfNoRt(targetNode){
+    for (let ruby of targetNode.getElementsByTagName('ruby')){
+        if (ruby.childNodes.length === 1 && ruby.firstChild.nodeName === "#text"){
+            ruby.replaceWith(...ruby.childNodes)
+        }
+    }
+}
+
 function formatLyrics() {
     console.log('applying correct format to lyrics')
     while (true) {
@@ -107,12 +115,14 @@ function formatLyrics() {
         lyrics.innerHTML = lyrics.innerHTML
             .replaceAll('class=""', '')
             .replaceAll('<br><br><br>', '<br><br>')
-            .trim() // from start of very first line too
+            .replaceAll('\xa0',' ')
+            .trim()
 
         unwrapUnneededElements(document.getElementById('lyrics'))
         removeEmpty(document.getElementById('lyrics'))
         mergeSimilar(document.getElementById('lyrics'))
         breakBrTags(document.getElementById('lyrics'))
+        unwrapRubyIfNoRt(document.getElementById('lyrics'))
 
         for (let i of lyrics.querySelectorAll('i')){
             if (i.textContent.startsWith(' ') && i.previousSibling.nodeName === "BR"){
