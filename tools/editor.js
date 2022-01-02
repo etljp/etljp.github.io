@@ -221,14 +221,21 @@ function onLyricsMutation() {
     // save lyrics
     console.log('saving lyrics to localStorage')
     let lyrics = document.getElementById('lyrics')
-    localStorage.setItem('undoStep', localStorage.getItem('savedLyrics'))
-    localStorage.setItem('savedLyrics', lyrics.innerHTML)
+    let savedLyrics = localStorage.getItem('savedLyrics')
+    if (lyrics.innerHTML !== savedLyrics) {
+        localStorage.setItem('undoStep', savedLyrics)
+        localStorage.setItem('savedLyrics', lyrics.innerHTML)
+    }
 
     // check for errors
     let hasErrors = false
     let errorGenerators = [
         () => addAnError(checkMissingItalics, 'italicsError', "On a line with non-Latin characters found Latin characters not in italics!"),
-        () => addAnError(kanjiOutsideRuby, 'kanjiError', `Found a kanji that's not in a ruby tag! ${currentlyEditing ? '(Go to edit mode and hold R to fix)' : '(Hold R to rectify)'}`)
+        () => addAnError(
+            kanjiOutsideRuby,
+            'kanjiError',
+            `Found a kanji that's not in a ruby tag! ${currentlyEditing ? '(Go to highlight mode and hold R to fix)' : '(Hold R to create and fill with a guess)'}`
+        )
     ]
     for (let callable of errorGenerators) {
         hasErrors = callable() || hasErrors
@@ -353,7 +360,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 if (holdingR || currentlyEditing)
                     break
                 holdingR = true
-                
+
                 let nodesThatNeedRubyTags = []
                 let fillTheArray = () => {
                     for (let textNode of [...document.getElementById('lyrics').childNodes].filter(n => n.nodeName === "#text")) {
@@ -406,8 +413,8 @@ document.addEventListener("DOMContentLoaded", () => {
                         }
                         rtTag.innerHTML = pronunciation
                         rubyTag.append(rtTag)
-                        rubyTag.scrollIntoView({block: "center"})
                         textNode.replaceWith(match[1], rubyTag, afterText)
+                        rubyTag.scrollIntoView({block: "center"})
                         if (nodesThatNeedRubyTags.length === 0)
                             fillTheArray()
                     }

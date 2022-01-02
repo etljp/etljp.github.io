@@ -26,7 +26,8 @@
         html.append(body)
 
         let a = document.createElement('a')
-        a.download = `${window.location.href.split(':')[2]}_${type}.html`
+        let decoded = decodeURI(window.location.href.split(':')[2])
+        a.download = `${decoded}_${type}.html`
         a.href = `data:text/html,${encodeURIComponent(html.outerHTML)}`
         a.target = "_blank"
         a.click()

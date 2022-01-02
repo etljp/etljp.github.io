@@ -187,3 +187,7 @@ a:hover {
     }
 }
 
+#lyrics ruby {
+    text-decoration: underline dotted #19b;
+}
+
