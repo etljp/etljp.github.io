@@ -302,6 +302,20 @@ document.addEventListener("DOMContentLoaded", () => {
         a.click()
         console.log('downloaded lyrics')
     }
+    
+    // edit mode button
+    document.getElementById('editModeButton').onclick = () => {
+        currentlyEditing = !currentlyEditing
+
+        let selector = document.getElementById('colorSelector')
+        selector.className = selector.className === "hidden" ? "" : "hidden"
+        let modeButton = document.getElementById('editModeButton')
+        modeButton.className = modeButton.className === "colorButton highlighter" ? "colorButton pencil" : "colorButton highlighter"
+        let lyrics = document.getElementById('lyrics')
+        lyrics.contentEditable = currentlyEditing.toString()
+        window.getSelection().removeAllRanges()
+        formatLyrics()
+    }
 
     // fill editor with previous file
     let savedLyrics = localStorage.getItem('savedLyrics')
@@ -330,19 +344,6 @@ document.addEventListener("DOMContentLoaded", () => {
     onLyricsMutation()
 
     // add event listeners
-    document.getElementById('editModeButton').addEventListener('click', () => {
-        currentlyEditing = !currentlyEditing
-
-        let selector = document.getElementById('colorSelector')
-        selector.className = selector.className === "hidden" ? "" : "hidden"
-        let modeButton = document.getElementById('editModeButton')
-        modeButton.className = modeButton.className === "colorButton highlighter" ? "colorButton pencil" : "colorButton highlighter"
-        let lyrics = document.getElementById('lyrics')
-        lyrics.contentEditable = currentlyEditing.toString()
-        window.getSelection().removeAllRanges()
-        formatLyrics()
-    })
-
     let holdingR = false
     document.addEventListener('keyup', (e) => {
         switch (e.code) {
