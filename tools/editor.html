@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Editor</title>
+    <link rel="icon" type="image/png" href="../favicon.png">
+    <link rel="stylesheet" href="../default.css">
+    <link rel="stylesheet" href="../colors.css" id="colorSheet">
+    <link rel="stylesheet" href="./editor.css">
+    <script src="../default.js"></script>
+    <script src="./constants.js"></script>
+    <script src="./sanityChecks.js"></script>
+    <script src="./editor.js"></script>
+    <meta property="og:title" content="etljp - Editor"/>
+    <meta property="og:type" content="website"/>
+    <meta property="og:url" content="https://etljp.github.io/tools/editor">
+    <meta property="og:image" content="https://etljp.github.io/favicon.png"/>
+    <meta property="og:site_name" content="etljp"/>
+</head>
+<body>
+<p id="lyrics" contenteditable="true"></p>
+<div id="colorSelector" class="hidden"></div>
+<div class="colorButton" id="downloadButton">
+    <svg aria-hidden="true" focusable="false" data-prefix="fas" data-icon="file-arrow-down"
+         class="" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512">
+        <path fill="currentColor"
+              d="M384 128h-128V0L384 128zM256 160H384v304c0 26.51-21.49 48-48 48h-288C21.49 512 0 490.5 0 464v-416C0 21.49 21.49 0 48 0H224l.0039 128C224 145.7 238.3 160 256 160zM255 295L216 334.1V232c0-13.25-10.75-24-24-24S168 218.8 168 232v102.1L128.1 295C124.3 290.3 118.2 288 112 288S99.72 290.3 95.03 295c-9.375 9.375-9.375 24.56 0 33.94l80 80c9.375 9.375 24.56 9.375 33.94 0l80-80c9.375-9.375 9.375-24.56 0-33.94S264.4 285.7 255 295z"></path>
+    </svg>
+</div>
+<div class="colorButton pencil" id="editModeButton">
+    <svg aria-hidden="true" focusable="false" data-prefix="fas" data-icon="highlighter"
+         class="svg-inline--fa fa-highlighter" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512">
+        <path fill="currentColor"
+              d="M124.6 239.1c-10.75 9.502-14.1 24.38-10.75 38.13l12.1 42.75l-50.88 51l96.13 96.25l50.88-50.88l42.75 13c13.75 4.25 28.62 0 38.12-10.75l35.62-41.62L166.1 204.5L124.6 239.1zM527.9 79.25l-63.09-63.12c-20.5-20.5-53.42-21.63-75.17-2.376L190.5 183.6l169.9 169.9l169.9-199.1C549.5 132.6 548.4 99.75 527.9 79.25zM71.48 409.6l-65.08 65.24C-7.278 488.6 2.419 512 21.76 512h72.54c4.232 0 8.291-1.684 11.29-4.686l32.02-32.1L71.48 409.6z"></path>
+    </svg>
+    <svg aria-hidden="true" focusable="false" data-prefix="fas" data-icon="pencil" class="svg-inline--fa fa-pencil"
+         role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+        <path fill="currentColor"
+              d="M497.9 74.16l-60.09-60.1c-18.75-18.75-49.19-18.75-67.93 0L313.4 70.61l127.1 128l56.56-56.55C516.7 123.3 516.7 92.91 497.9 74.16zM31.04 352.1c-2.234 2.234-3.756 5.078-4.377 8.176l-26.34 131.7C-1.703 502.1 6.156 512 15.95 512c1.049 0 2.117-.1035 3.199-.3203l131.7-26.34c3.098-.6191 5.941-2.141 8.176-4.373l259.7-259.7l-128-128L31.04 352.1zM131.9 440.2l-75.14 15.03l15.03-75.15L96 355.9V416h60.12L131.9 440.2z"></path>
+    </svg>
+</div>
+<div id="dropzone"></div>
+<div id="filePrompt">
+    <p>
+        <nobr id="fileName"></nobr><br>
+        <a id="replace">Replace</a><br>
+        <a id="interlace">Interlace</a><br>
+        <a id="append">Append</a><br>
+        <a id="cancel">Cancel</a><br>
+    </p>
+</div>
+<div id="sanityErrors" class="hidden">
+
+</div>
+<div id="alert"></div>
+</body>
+</html>

@@ -1,0 +1,193 @@
+html {
+    padding-bottom: 75px;
+}
+
+#colorSelector {
+    position: fixed;
+    width: 100%;
+    height: 80px;
+    left: 0;
+    bottom: 0;
+    display: flex;
+    justify-content: center;
+    transition: transform 0.5s ease;
+}
+
+#colorSelector.hidden {
+    transform: translate(0%, 100%)
+}
+
+.colorButton {
+    width: 50px;
+    height: 50px;
+    user-select: none;
+    border-radius: 10px;
+}
+
+#colorSelector .colorButton {
+    margin-top: 15px;
+    margin-left: 3px;
+    margin-right: 3px;
+}
+
+#downloadButton {
+    background: #22d;
+    position: fixed;
+    top: 15px;
+    right: 15px;
+}
+
+#editModeButton {
+    background: #888;
+    position: fixed;
+    top: 15px;
+    left: 15px;
+}
+
+svg {
+    position: absolute;
+    width: 66%;
+    height: 66%;
+    margin-top: 17%;
+    left: 0;
+    right: 0;
+    margin-left: auto;
+    margin-right: auto;
+    transition: opacity 0.5s ease-out;
+}
+
+div.highlighter svg.fa-highlighter {
+    opacity: 1;
+}
+
+div.pencil svg.fa-highlighter {
+    opacity: 0;
+}
+
+div.highlighter svg.fa-pencil {
+    opacity: 0;
+}
+
+div.pencil svg.fa-pencil {
+    opacity: 1;
+}
+
+.white {
+    background: none;
+    color: #eee;
+}
+
+.colorButton.white {
+    background: #fff;
+}
+
+#dropzone {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 999;
+    visibility: hidden;
+}
+
+#filePrompt {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0);
+    opacity: 0;
+    visibility: hidden;
+    display: flex;
+    justify-content: center;
+    transition: opacity 0.3s, background-color 0.3s, visibility 0.4s;
+}
+
+#filePrompt p {
+    position: absolute;
+    width: 100%;
+    top: 10%;
+    background: #22a;
+    padding: 1em;
+    border-radius: 1em;
+}
+
+#fileName {
+    font-size: 3em;
+    text-overflow: clip;
+}
+
+#filePrompt a {
+    font-size: 2em;
+    margin: 0.5em;
+}
+
+a {
+    cursor: pointer;
+}
+
+a:hover {
+    text-decoration: underline;
+}
+
+#sanityErrors {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    padding-top: 0.5em;
+    padding-bottom: 0.5em;
+    color: #fff;
+    visibility: visible;
+    pointer-events: none;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    transition: transform 0.5s ease, visibility 0.5s ease;
+}
+
+#sanityErrors a,
+#sanityErrors span {
+    background-color: rgba(188, 11, 11, 0.7);
+    pointer-events: auto;
+    text-shadow: 1px 1px black;
+}
+
+#sanityErrors.hidden {
+    transform: translate(0%, -100%);
+    visibility: hidden;
+}
+
+#alert {
+    position: fixed;
+    width: 5em;
+    height: 1em;
+    background: linear-gradient(0.25turn, rgba(255, 255, 0, 0.6), rgba(255, 0, 0, 0));;
+    opacity: 0;
+    pointer-events: none;
+}
+
+#lyrics rt {
+    font-size: 15%;
+    opacity: 0.6;
+    display: inline-block;
+    text-decoration: underline dotted white;
+    padding-top: 16px;
+}
+
+@-moz-document url-prefix() {
+    #lyrics rt {
+        font-size: 66%;
+        opacity: 1;
+        display: ruby-text;
+        text-decoration: none;
+        padding-top: 0;
+    }
+}
+
+#lyrics ruby {
+    text-decoration: underline dotted #19b;
+}
+
