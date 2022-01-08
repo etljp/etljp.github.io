@@ -193,6 +193,24 @@ function scrollToTextNode(textNode) {
 }
 
 
+function breakRuby(){
+    let lyrics = document.getElementById('lyrics')
+    for (let ruby of lyrics.querySelectorAll('ruby')){
+        let textNode = ruby.firstChild
+        if (textNode.nodeName === "#text") {
+            let match = textNode.textContent.match(/(.+)\s(.+)/)
+            if (match){
+                let before = match[1]
+                let after = match[2]
+                let newRuby = document.createElement('ruby')
+                newRuby.textContent = before
+                textNode.textContent = after
+                ruby.before(newRuby)
+            }
+        }
+    }
+}
+
 /**
  * @param {function} errorFunction
  * @param {string} errorId
@@ -218,6 +236,8 @@ function addAnError(errorFunction, errorId, errorText) {
 let currentlyEditing = true
 
 function onLyricsMutation() {
+    // split ruby tags if there's whitespace in it
+    breakRuby()
     // save lyrics
     console.log('saving lyrics to localStorage')
     let lyrics = document.getElementById('lyrics')
@@ -333,6 +353,7 @@ document.addEventListener("DOMContentLoaded", () => {
     })
 
     document.addEventListener('keydown', (e) => {
+        // TODO: convert romaji in <rt> to hiragana
         switch (e.code) {
             case 'KeyI':
                 if (!currentlyEditing) {
@@ -372,6 +393,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
                 (async () => {
                     fillTheArray()
+                    let amountBefore = nodesThatNeedRubyTags.length
                     while (holdingR && nodesThatNeedRubyTags.length > 0) {
                         let textNode = nodesThatNeedRubyTags.shift()
                         let match = textNode.textContent.match(/(\P{Ideographic}*)(\p{Ideographic}+)(.*)/u)
@@ -380,6 +402,8 @@ document.addEventListener("DOMContentLoaded", () => {
                         let rubyTag = document.createElement('ruby')
                         let rtTag = document.createElement('rt')
                         let response = await fetch(`https://kanjiapi.dev/v1/words/${kanji[0]}`)
+                        if (!response.ok)
+                            return
                         let data = await response.json()
 
                         let matches = []
@@ -415,8 +439,13 @@ document.addEventListener("DOMContentLoaded", () => {
                         rubyTag.append(rtTag)
                         textNode.replaceWith(match[1], rubyTag, afterText)
                         rubyTag.scrollIntoView({block: "center"})
-                        if (nodesThatNeedRubyTags.length === 0)
+                        if (nodesThatNeedRubyTags.length === 0) {
                             fillTheArray()
+                            if (amountBefore === nodesThatNeedRubyTags.length){
+                                return
+                            }
+                            amountBefore = nodesThatNeedRubyTags.length
+                        }
                     }
                 })()
                 break
@@ -498,7 +527,7 @@ window.addEventListener('load', () => {
                 }
             }
         } else {
-            rv = fileData
+            rv = fileData.replaceAll("\n","<br>")
         }
 
         return rv
@@ -519,7 +548,7 @@ window.addEventListener('load', () => {
             let oldString = lyrics.innerHTML
             let newString = getFileContent(data, isHtml)
             let oldLines = oldString.split('<br>')
-            let newLines = newString.split(isHtml ? '<br>' : '\n')
+            let newLines = newString.split('<br>')
             let oldTotal = oldLines.length
             let newTotal = newLines.length
             let interlacedLines = [oldLines.shift()]

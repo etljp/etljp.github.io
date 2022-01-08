@@ -170,8 +170,8 @@ a:hover {
 }
 
 #lyrics rt {
-    font-size: 10%;
-    opacity: 0.5;
+    font-size: 15%;
+    opacity: 0.6;
     display: inline-block;
     text-decoration: underline dotted white;
     padding-top: 16px;

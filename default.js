@@ -9,7 +9,7 @@ function removeEmpty(targetNode = null) {
     let rv = false
     let func = (el) => {
         rv = removeEmpty(el)
-        if (el.textContent.trim().length === 0 && el.childNodes.length === 0 && el.nodeName !== "BR") {
+        if (el.textContent.trim().length === 0 && el.childNodes.length === 0 && !["BR", "#text"].includes(el.nodeName)) {
             el.remove()
             rv = true
         }
@@ -99,11 +99,18 @@ function unwrapUnneededElements(targetNode) {
     }
 }
 
-function unwrapRubyIfNoRt(targetNode){
-    for (let ruby of targetNode.getElementsByTagName('ruby')){
-        if (ruby.childNodes.length === 1 && ruby.firstChild.nodeName === "#text"){
+function unwrapRubyIfNoRt(targetNode) {
+    for (let ruby of targetNode.getElementsByTagName('ruby')) {
+        if (ruby.childNodes.length === 1 && ruby.firstChild.nodeName === "#text") {
             ruby.replaceWith(...ruby.childNodes)
         }
+    }
+}
+
+function removeElementStyle(targetNode) {
+    for (let element of targetNode.children) {
+        element.removeAttribute('style')
+        removeElementStyle(element)
     }
 }
 
@@ -115,7 +122,8 @@ function formatLyrics() {
         lyrics.innerHTML = lyrics.innerHTML
             .replaceAll('class=""', '')
             .replaceAll('<br><br><br>', '<br><br>')
-            .replaceAll('\xa0',' ')
+            .replaceAll('\xa0', ' ')
+            .replaceAll('’', "'")
             .trim()
 
         unwrapUnneededElements(document.getElementById('lyrics'))
@@ -123,9 +131,10 @@ function formatLyrics() {
         mergeSimilar(document.getElementById('lyrics'))
         breakBrTags(document.getElementById('lyrics'))
         unwrapRubyIfNoRt(document.getElementById('lyrics'))
+        removeElementStyle(document.getElementById('lyrics'))
 
-        for (let i of lyrics.querySelectorAll('i')){
-            if (i.textContent.startsWith(' ') && i.previousSibling.nodeName === "BR"){
+        for (let i of lyrics.querySelectorAll('i')) {
+            if (i.textContent.startsWith(' ') && i.previousSibling.nodeName === "BR") {
                 i.innerHTML = i.innerHTML.substring(1)
             }
         }
