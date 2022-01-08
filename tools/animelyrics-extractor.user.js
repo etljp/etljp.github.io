@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Extract lyrics from animelyrics
-// @version      0.1
+// @version      0.2
 // @author       LittleEndu
 // @updateURL    https://etljp.github.io/tools/animelyrics-extractor.user.js
 // @match        https://www.animelyrics.com/anime/*/*.*
@@ -98,8 +98,9 @@
                 let response = await fetch(url + '.jis')
                 if (!response.ok)
                     return
-                let data = await response.text()
-                let parsedDocument = (new DOMParser()).parseFromString(data, 'text/html')
+                let data = await response.arrayBuffer()
+                let text = (new TextDecoder("shift-jis")).decode(data)
+                let parsedDocument = (new DOMParser()).parseFromString(text, 'text/html')
                 copyKanji(parsedDocument)
             })()
         }
