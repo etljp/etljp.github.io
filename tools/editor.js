@@ -339,21 +339,21 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // add mutation observer for saving and sanity checks
     const observer = new MutationObserver(timeoutHelper)
-    lyrics.addEventListener('input', timeoutHelper)
+    lyrics.oninput = timeoutHelper
     observer.observe(lyrics, {attributes: true, childList: true, subtree: true})
     onLyricsMutation()
 
     // add event listeners
     let holdingR = false
-    document.addEventListener('keyup', (e) => {
+    document.onkeyup = (e) => {
         switch (e.code) {
             case 'KeyR':
                 holdingR = false
                 break
         }
-    })
+    }
 
-    document.addEventListener('keydown', (e) => {
+    document.onkeydown = (e) => {
         // TODO: convert romaji in <rt> to hiragana
         switch (e.code) {
             case 'KeyI':
@@ -451,7 +451,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 })()
                 break
         }
-    });
+    }
 })
 
 window.addEventListener('load', () => {
@@ -461,9 +461,9 @@ window.addEventListener('load', () => {
     let currentFile
     let fileName = document.getElementById('fileName')
     let hasFocusNow = document.hasFocus()
-    window.addEventListener("blur", () => {
+    window.onblur = () => {
         hasFocusNow = false
-    })
+    }
 
     let allowDrag = (e) => {
         e.preventDefault()
