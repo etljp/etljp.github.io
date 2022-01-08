@@ -2,6 +2,10 @@ html {
     padding-bottom: 75px;
 }
 
+#lyrics {
+    display: inline-block;
+}
+
 #colorSelector {
     position: fixed;
     width: 100%;
