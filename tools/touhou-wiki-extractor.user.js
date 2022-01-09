@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Extract lyrics from touhou wiki
-// @version      0.1
+// @version      0.2
 // @author       LittleEndu
 // @updateURL    https://etljp.github.io/tools/touhou-wiki-extractor.user.js
 // @match        https://en.touhouwiki.net/wiki/Lyrics:*
@@ -49,7 +49,7 @@
         for (let row of document.querySelectorAll('.lyrics_row')) {
             let contents = row.querySelectorAll('td p')
             let japanese = contents[0].cloneNode(true)
-            while (true){
+            while (true) {
                 let rubyTags = japanese.querySelectorAll('ruby[lang]')
                 let spanTags = japanese.getElementsByTagName('span')
                 if (rubyTags.length === 0 && spanTags.length === 0) {
@@ -68,13 +68,17 @@
                 }
             }
             japaneseLines.push(...japanese.innerHTML.trim().split('\n'))
-            romajiLines.push(...contents[1].textContent.trim().split('\n'))
-            englishLines.push(...contents[2].textContent.trim().replaceAll('’',"'").split('\n'))
+            if (contents.length > 1)
+                romajiLines.push(...contents[1].textContent.trim().split('\n'))
+            if (contents.length > 2)
+                englishLines.push(...contents[2].textContent.trim().replaceAll('’', "'").split('\n'))
         }
 
         saveLyrics(japaneseLines, 'jp')
-        saveLyrics(romajiLines, 'romaji')
-        saveLyrics(englishLines, 'en')
+        if (romajiLines.length !== 0)
+            saveLyrics(romajiLines, 'romaji')
+        if (englishLines.length !== 0)
+            saveLyrics(englishLines, 'en')
     }
 
     document.getElementById('footer').append(div)
