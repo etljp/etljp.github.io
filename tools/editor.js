@@ -418,7 +418,9 @@ document.addEventListener("DOMContentLoaded", () => {
                             if (!reKanji)
                                 break
                             let re = new RegExp(`^${reKanji}\\P{Ideographic}*$`, 'u')
-                            matches = data.filter(el => el["variants"][0]["written"].match(re))
+                            let allVariants = []
+                            data.map(el => allVariants.push(...el["variants"]))
+                            matches = allVariants.filter(el => el["written"].match(re))
                         }
 
                         if (!reKanji)
@@ -427,10 +429,10 @@ document.addEventListener("DOMContentLoaded", () => {
                         if (kanji.length !== searchAmount)
                             afterText = kanji.substr(-(kanji.length - searchAmount)) + afterText
 
-                        let getPriorities = (el) => el["variants"][0]["priorities"].length
+                        let getPriorities = (el) => el["priorities"].length
                         let candidate = matches.sort((el1, el2) => {
                             return getPriorities(el2) - getPriorities(el1)
-                        })[0]["variants"][0]
+                        })[0]
                         let writing = candidate["written"]
                         let pronunciation = candidate["pronounced"]
                         while (writing.slice(-1) === pronunciation.slice(-1)) {
@@ -449,7 +451,7 @@ document.addEventListener("DOMContentLoaded", () => {
                             amountBefore = nodesThatNeedRubyTags.length
                         }
                     }
-                })()
+                })().catch(console.error)
                 break
         }
     }
