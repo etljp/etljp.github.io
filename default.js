@@ -142,6 +142,35 @@ function formatLyrics() {
         if (before === lyrics.innerHTML)
             break
     }
+
+    if (window.location.href.includes('/songs/')){
+        let lines = []
+        let temp = []
+        document.getElementById('lyrics').childNodes.forEach((node) => {
+            if (node.nodeName === "BR"){
+                lines.push(temp)
+                temp = []
+            } else {
+                temp.push(node)
+            }
+        })
+        if (temp.length !== 0)
+            lines.push(temp)
+        for (let nodes of lines){
+            if (nodes.length !== 0) {
+                let range = document.createRange()
+                range.setStartBefore(nodes[0])
+                range.setEndAfter(nodes[nodes.length - 1])
+                let allText = ""
+                nodes.forEach((node) => allText += node.textContent)
+                if (/[^\x00-\xFF]+/g.test(allText)){
+                    let span = document.createElement('span')
+                    span.className = "ja"
+                    range.surroundContents(span)
+                }
+            }
+        }
+    }
 }
 
 document.addEventListener("DOMContentLoaded", formatLyrics)
