@@ -121,7 +121,6 @@ function formatLyrics() {
         let before = lyrics.innerHTML
         lyrics.innerHTML = lyrics.innerHTML
             .replaceAll('class=""', '')
-            .replaceAll('<br><br><br>', '<br><br>')
             .replaceAll('\xa0', ' ')
             .replaceAll('’', "'")
             .trim()
