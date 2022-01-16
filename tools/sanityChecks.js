@@ -31,11 +31,12 @@ function checkMissingItalics() {
     return rv
 }
 
-function kanjiOutsideRuby() {
+function kanjiOutsideRuby(targetNode) {
     let rv = []
-    let lyrics = document.getElementById('lyrics')
-    if (lyrics) {
-        for (let textNode of [...lyrics.childNodes].filter(n => n.nodeName === "#text")) {
+    if (!targetNode)
+        targetNode = document.getElementById('lyrics')
+    if (targetNode) {
+        for (let textNode of [...targetNode.childNodes].filter(n => n.nodeName === "#text")) {
             let content = textNode.textContent.trim()
             if (/\p{Ideographic}/u.test(content)){
                 let hasRuby = false
@@ -50,6 +51,10 @@ function kanjiOutsideRuby() {
                 if (hasRuby) continue
                 rv.push(textNode)
             }
+        }
+
+        for (let child of targetNode.children){
+            rv.push(...kanjiOutsideRuby(child))
         }
     }
     return rv
