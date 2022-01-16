@@ -292,7 +292,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 .replaceAll('<br>', '<br>\n') // only add new lines to where <br> tags are
                 .replaceAll(/\n\s/g, '\n') // remove whitespace from start of lines
                 .replaceAll(' <br>', '<br>') // remove whitespace from end of lines
-                .replaceAll('\xa0', ' ') // replace non-breaking spaces with breaking ones
+                .replaceAll('&nbsp;', ' ') // replace non-breaking spaces with breaking ones
         body.append(p)
         html.getElementsByTagName('body')[0].replaceWith(body)
 
