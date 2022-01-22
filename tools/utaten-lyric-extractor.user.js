@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Extract lyrics from utaten
-// @version      0.1
+// @version      0.2
 // @author       LittleEndu
 // @updateURL    https://etljp.github.io/tools/utaten-lyric-extractor.user.js
 // @match        https://utaten.com/lyric/*
@@ -38,9 +38,9 @@
         }
 
         let captureReplace = (content) => {
-            let groups = content.match(/([^\x00-\xFF]*)([\x41-\xFF\s]+)([^\x00-\xFF]*)/)
+            let groups = content.match(/([^\x00-\xFF]*)([\x20-\x2F\x3A-\xFF\s]+)(.*)/)
             if (groups && groups[2].trim().length > 0) {
-                let firstHTML = captureReplace(groups[1])
+                let firstHTML = groups[1]
                 let secondHTML = `<i>${groups[2].trim()}</i>`
                 let thirdHTML = captureReplace(groups[3])
                 return firstHTML + ' ' + secondHTML + ' ' + thirdHTML
