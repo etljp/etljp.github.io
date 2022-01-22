@@ -28,6 +28,11 @@ h6 {
     margin-block-end: 0.6em;
 }
 
+.lil{
+    opacity: 0.6;
+    font-size: 0.6em;
+}
+
 rt {
     font-size: 66%;
     color: #eee;
