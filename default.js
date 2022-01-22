@@ -89,7 +89,7 @@ function breakBrTags(targetNode) {
 
 function unwrapUnneededElements(targetNode) {
     let unwanted = ['div', 'span']
-    let chromeOnly = ['b', 'u', 's']
+    let chromeOnly = ['b', 'u', 's', 'font']
     for (let target of unwanted.concat(chromeOnly)) {
         for (let el of targetNode.querySelectorAll(target)) {
             console.log(`unwrapped unneeded elements ${el.nodeName}`)
